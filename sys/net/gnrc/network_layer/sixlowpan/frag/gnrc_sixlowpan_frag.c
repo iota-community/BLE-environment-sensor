@@ -294,18 +294,14 @@ void gnrc_sixlowpan_frag_recv(gnrc_pktsnip_t *pkt, void *ctx, unsigned page)
     gnrc_netif_hdr_t *hdr = pkt->next->data;
     sixlowpan_frag_t *frag = pkt->data;
     uint16_t offset = 0;
-    size_t frag_size;
 
     (void)ctx;
-    (void)page;
     switch (frag->disp_size.u8[0] & SIXLOWPAN_FRAG_DISP_MASK) {
         case SIXLOWPAN_FRAG_1_DISP:
-            frag_size = (pkt->size - sizeof(sixlowpan_frag_t));
             break;
 
         case SIXLOWPAN_FRAG_N_DISP:
             offset = (((sixlowpan_frag_n_t *)frag)->offset * 8);
-            frag_size = (pkt->size - sizeof(sixlowpan_frag_n_t));
             break;
 
         default:
@@ -315,14 +311,51 @@ void gnrc_sixlowpan_frag_recv(gnrc_pktsnip_t *pkt, void *ctx, unsigned page)
             return;
     }
 
-    rbuf_add(hdr, pkt, frag_size, offset);
-
-    gnrc_pktbuf_release(pkt);
+    rbuf_add(hdr, pkt, offset, page);
 }
 
-void gnrc_sixlowpan_frag_gc_rbuf(void)
+void gnrc_sixlowpan_frag_rbuf_gc(void)
 {
     rbuf_gc();
+}
+
+void gnrc_sixlowpan_frag_rbuf_remove(gnrc_sixlowpan_rbuf_t *rbuf)
+{
+    assert(rbuf != NULL);
+    rbuf_rm((rbuf_t *)rbuf);
+}
+
+void gnrc_sixlowpan_frag_rbuf_dispatch_when_complete(gnrc_sixlowpan_rbuf_t *rbuf,
+                                                     gnrc_netif_hdr_t *netif_hdr)
+{
+    assert(rbuf);
+    assert(netif_hdr);
+    if (rbuf->current_size == rbuf->pkt->size) {
+        gnrc_pktsnip_t *netif = gnrc_netif_hdr_build(rbuf->src,
+                                                     rbuf->src_len,
+                                                     rbuf->dst,
+                                                     rbuf->dst_len);
+
+        if (netif == NULL) {
+            DEBUG("6lo rbuf: error allocating netif header\n");
+            gnrc_pktbuf_release(rbuf->pkt);
+            gnrc_sixlowpan_frag_rbuf_remove(rbuf);
+            return;
+        }
+
+        /* copy the transmit information of the latest fragment into the newly
+         * created header to have some link_layer information. The link_layer
+         * info of the previous fragments is discarded.
+         */
+        gnrc_netif_hdr_t *new_netif_hdr = netif->data;
+        new_netif_hdr->if_pid = netif_hdr->if_pid;
+        new_netif_hdr->flags = netif_hdr->flags;
+        new_netif_hdr->lqi = netif_hdr->lqi;
+        new_netif_hdr->rssi = netif_hdr->rssi;
+        LL_APPEND(rbuf->pkt, netif);
+        gnrc_sixlowpan_dispatch_recv(rbuf->pkt, NULL, 0);
+        gnrc_sixlowpan_frag_rbuf_remove(rbuf);
+    }
 }
 
 /** @} */

@@ -79,9 +79,43 @@ typedef uint32_t gpio_t;
 void gpio_init_af(gpio_t pin, uint8_t sel, uint8_t over);
 
 /**
+ * @brief   Configure an alternate function for the given pin
+ *
+ * @param[in] pin   gpio pin
+ * @param[in] over  Override pin configuration
+ * @param[in] sel   Set peripheral function for pin (output)
+ * @param[in] func  Set pin for peripheral function (input)
+ */
+void gpio_init_mux(gpio_t pin, uint8_t over, uint8_t sel, uint8_t func);
+
+/**
+ * @name   Use shared I2C functions
+ * @{
+ */
+#define PERIPH_I2C_NEED_READ_REG
+#define PERIPH_I2C_NEED_READ_REGS
+#define PERIPH_I2C_NEED_WRITE_REG
+#define PERIPH_I2C_NEED_WRITE_REGS
+/** @} */
+
+/**
+ * @name   Override I2C clock speed values
+ * @{
+ */
+#define HAVE_I2C_SPEED_T
+typedef enum {
+    I2C_SPEED_LOW       = 0x01,     /**< not supported */
+    I2C_SPEED_NORMAL    = 100000U,  /**< normal mode:   ~100kbit/s */
+    I2C_SPEED_FAST      = 400000U,  /**< fast mode:     ~400kbit/s */
+    I2C_SPEED_FAST_PLUS = 0x02,     /**< not supported */
+    I2C_SPEED_HIGH      = 0x03,     /**< not supported */
+} i2c_speed_t;
+/** @} */
+/**
  * @brief   I2C configuration options
  */
 typedef struct {
+    i2c_speed_t speed;      /**< baudrate used for the bus */
     gpio_t scl_pin;         /**< pin used for SCL */
     gpio_t sda_pin;         /**< pin used for SDA */
 } i2c_conf_t;
@@ -160,6 +194,23 @@ typedef struct {
     uint8_t cpsr;           /**< CPSR clock divider */
     uint8_t scr;            /**< SCR clock divider */
 } spi_clk_conf_t;
+
+#ifndef BOARD_HAS_SPI_CLK_CONF
+/**
+ * @brief   Pre-calculated clock divider values based on a CLOCK_CORECLOCK (32MHz)
+ *
+ * SPI bus frequency =  CLOCK_CORECLOCK / (CPSR * (SCR + 1)), with
+ * CPSR = 2..254 and even,
+ *  SCR = 0..255
+ */
+static const spi_clk_conf_t spi_clk_config[] = {
+    { .cpsr = 64, .scr =  4 },  /* 100khz */
+    { .cpsr = 16, .scr =  4 },  /* 400khz */
+    { .cpsr = 32, .scr =  0 },  /* 1.0MHz */
+    { .cpsr =  2, .scr =  2 },  /* 5.3MHz */
+    { .cpsr =  2, .scr =  1 }   /* 8.0MHz */
+};
+#endif /* BOARD_HAS_SPI_CLK_CONF */
 
 /**
  * @name    SPI configuration data structure
