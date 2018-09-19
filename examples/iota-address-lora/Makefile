@@ -8,6 +8,7 @@ BOARD ?= bluepill
 RIOTBASE ?= $(CURDIR)/../..
 
 # Include
+USEMODULE += xtimer
 USEPKG += iota-wallet
 
 # Comment this out to disable code in RIOT that does safety checking
