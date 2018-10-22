@@ -79,7 +79,8 @@ int bundle_receiver(char * hash){
 //Define the transaction chars array. The char trytes will saved in this array. (base-27 encoded)
 //char transaction_chars[4][2673];
 
-char seedChars[] = "J9FERMAA9BPBCJEOZUKTIRIQEOQHFWYTHTJB9PI9KGUHPTLVX9TQJACWTUNVQJKEQVDRDBIJIB9WAHTVB";
+char seedChars[] =
+        "J9FERMAA9BPBCJEOZUKTIRIQEOQHFWYTHTJB9PI9KGUHPTLVX9TQJACWTUNVQJKEQVDRDBIJIB9WAHTVB";
 
 //tx_receiver_t tx_receiver_func = &tx_receiver;
 //bundle_hash_receiver bundle_receiver_func = &bundle_receiver;
