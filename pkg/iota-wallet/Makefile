@@ -1,6 +1,6 @@
 PKG_NAME=iota-wallet
 PKG_URL=https://github.com/embedded-iota/micro-light-wallet
-PKG_VERSION=88e0b89eb58ab145f3b09d50b03b3661234e572d
+PKG_VERSION=1f7f7979e00a51f548a7907b91955cb5f8a34363
 PKG_LICENSE=MIT
 
 .PHONY: all
