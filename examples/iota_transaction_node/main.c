@@ -22,7 +22,7 @@
 #include <stdlib.h>
 #include <stdint.h>
 
-#include "thread.h"
+#include <pthread.h>
 
 #include "iota/kerl.h"
 #include "iota/conversion.h"
