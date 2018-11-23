@@ -16,7 +16,7 @@ all: $(PKG_BUILDDIR)/src/Makefile
 $(PKG_BUILDDIR)/src/Makefile: $(TOOLCHAIN_FILE)
 	cd $(PKG_BUILDDIR) && \
 	cmake -DCMAKE_TOOLCHAIN_FILE=$(TOOLCHAIN_FILE) \
-		  -CMAKE_C_FLAGS="$(RIOT_CFLAGS)" .
+		  -DCMAKE_C_FLAGS="$(RIOT_CFLAGS)" .
 
 $(TOOLCHAIN_FILE): git-download
 	$(RIOTTOOLS)/cmake/generate-xcompile-toolchain.sh > $(TOOLCHAIN_FILE)
