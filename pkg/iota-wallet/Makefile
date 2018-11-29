@@ -1,6 +1,6 @@
 PKG_NAME=iota-wallet
 PKG_URL=https://github.com/embedded-iota/micro-light-wallet
-PKG_VERSION=c29b43200e5b3c451aa232224228535be54c8c42
+PKG_VERSION=c9e1c2d8221c7d204608f6a7732ff30c0e0359eb
 PKG_LICENSE=MIT
 
 .PHONY: all
@@ -15,8 +15,7 @@ all: $(PKG_BUILDDIR)/src/Makefile
 
 $(PKG_BUILDDIR)/src/Makefile: $(TOOLCHAIN_FILE)
 	cd $(PKG_BUILDDIR) && \
-	cmake -DCMAKE_TOOLCHAIN_FILE=$(TOOLCHAIN_FILE) \
-		  -DCMAKE_C_FLAGS="$(RIOT_CFLAGS)" .
+	make -e CFLAGS="$(RIOT_CFLAGS)" lib
 
 $(TOOLCHAIN_FILE): git-download
 	$(RIOTTOOLS)/cmake/generate-xcompile-toolchain.sh > $(TOOLCHAIN_FILE)
