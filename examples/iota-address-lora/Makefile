@@ -9,7 +9,7 @@ RIOTBASE ?= $(CURDIR)/../..
 
 # Include
 USEMODULE += xtimer
-USEPKG += iota-wallet
+USEPKG += iota-library
 
 # Comment this out to disable code in RIOT that does safety checking
 # which is not needed in a production environment but helps in the

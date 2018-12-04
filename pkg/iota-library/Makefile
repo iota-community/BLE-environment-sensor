@@ -1,6 +1,6 @@
-PKG_NAME=iota-wallet
-PKG_URL=https://github.com/embedded-iota/micro-light-wallet
-PKG_VERSION=9a8936fb28aef07e81163b0149e8069881d5a3c9
+PKG_NAME=iota-library
+PKG_URL=https://github.com/embedded-iota/iota-c-library
+PKG_VERSION=ab68a6b42d6c61f001bafebc226ebb49922149d8
 PKG_LICENSE=MIT
 
 .PHONY: all
@@ -11,7 +11,7 @@ TOOLCHAIN_FILE=$(PKG_BUILDDIR)/xcompile-toolchain.cmake
 
 all: $(PKG_BUILDDIR)/src/Makefile
 	$(MAKE) -C $(PKG_BUILDDIR) && \
-	cp $(PKG_BUILDDIR)/build/libiota_wallet.a $(BINDIR)/iota-wallet.a
+	cp $(PKG_BUILDDIR)/build/libiota.a $(BINDIR)/iota-library.a
 
 $(PKG_BUILDDIR)/src/Makefile: $(TOOLCHAIN_FILE)
 	cd $(PKG_BUILDDIR) && \

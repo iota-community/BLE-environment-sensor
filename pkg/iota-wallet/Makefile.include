@@ -1,1 +1,0 @@
-INCLUDES += -L$(PKGDIRBASE)/iota-wallet/ -I$(PKGDIRBASE)/iota-wallet/src
