@@ -1,0 +1,11 @@
+syntax = "proto2";
+
+message IotaTransactionMessage {
+    required bytes signatureMessageFragment = 1;
+    required bytes address = 2;
+    required sfixed64 value = 3;
+    required bytes obsoleteTag = 4;
+    required fixed32 timestamp = 5;
+    required fixed32 currentIndex = 6;
+    required fixed32 lastIndex = 7;
+}
