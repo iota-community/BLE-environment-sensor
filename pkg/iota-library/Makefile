@@ -1,6 +1,6 @@
 PKG_NAME=iota-library
 PKG_URL=https://github.com/embedded-iota/iota-c-library
-PKG_VERSION=ab68a6b42d6c61f001bafebc226ebb49922149d8
+PKG_VERSION=236da21067047c240507cb780b4457370d02938d
 PKG_LICENSE=MIT
 
 .PHONY: all
