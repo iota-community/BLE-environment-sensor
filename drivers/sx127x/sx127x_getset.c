@@ -269,37 +269,41 @@ void sx127x_set_rx(sx127x_t *dev)
                 sx127x_reg_write(dev, SX127X_REG_LR_IRQFLAGSMASK,
                                  /* SX127X_RF_LORA_IRQFLAGS_RXTIMEOUT |
                                     SX127X_RF_LORA_IRQFLAGS_RXDONE |
-                                    SX127X_RF_LORA_IRQFLAGS_PAYLOADCRCERROR | */
-                                 SX127X_RF_LORA_IRQFLAGS_VALIDHEADER |
+                                    SX127X_RF_LORA_IRQFLAGS_PAYLOADCRCERROR |
+                                    SX127X_RF_LORA_IRQFLAGS_VALIDHEADER | */
                                  SX127X_RF_LORA_IRQFLAGS_TXDONE |
                                  SX127X_RF_LORA_IRQFLAGS_CADDONE |
                                  /* SX127X_RF_LORA_IRQFLAGS_FHSSCHANGEDCHANNEL | */
                                  SX127X_RF_LORA_IRQFLAGS_CADDETECTED);
 
-                /* DIO0=RxDone, DIO2=FhssChangeChannel */
+                /* DIO0=RxDone, DIO2=FhssChangeChannel, DIO3=ValidHeader */
                 sx127x_reg_write(dev, SX127X_REG_DIOMAPPING1,
                                  (sx127x_reg_read(dev, SX127X_REG_DIOMAPPING1) &
                                   SX127X_RF_LORA_DIOMAPPING1_DIO0_MASK &
-                                  SX127X_RF_LORA_DIOMAPPING1_DIO2_MASK) |
+                                  SX127X_RF_LORA_DIOMAPPING1_DIO2_MASK &
+                                  SX127X_RF_LORA_DIOMAPPING1_DIO3_MASK) |
                                  SX127X_RF_LORA_DIOMAPPING1_DIO0_00 |
-                                 SX127X_RF_LORA_DIOMAPPING1_DIO2_00);
+                                 SX127X_RF_LORA_DIOMAPPING1_DIO2_00 |
+                                 SX127X_RF_LORA_DIOMAPPING1_DIO3_01);
             }
             else {
                 sx127x_reg_write(dev, SX127X_REG_LR_IRQFLAGSMASK,
                                  /* SX127X_RF_LORA_IRQFLAGS_RXTIMEOUT |
                                     SX127X_RF_LORA_IRQFLAGS_RXDONE |
-                                    SX127X_RF_LORA_IRQFLAGS_PAYLOADCRCERROR | */
-                                 SX127X_RF_LORA_IRQFLAGS_VALIDHEADER |
+                                    SX127X_RF_LORA_IRQFLAGS_PAYLOADCRCERROR |
+                                    SX127X_RF_LORA_IRQFLAGS_VALIDHEADER | */
                                  SX127X_RF_LORA_IRQFLAGS_TXDONE |
                                  SX127X_RF_LORA_IRQFLAGS_CADDONE |
                                  SX127X_RF_LORA_IRQFLAGS_FHSSCHANGEDCHANNEL |
                                  SX127X_RF_LORA_IRQFLAGS_CADDETECTED);
 
-                /* DIO0=RxDone */
+                /* DIO0=RxDone, DIO3=ValidHeader */
                 sx127x_reg_write(dev, SX127X_REG_DIOMAPPING1,
                                  (sx127x_reg_read(dev, SX127X_REG_DIOMAPPING1) &
-                                  SX127X_RF_LORA_DIOMAPPING1_DIO0_MASK) |
-                                 SX127X_RF_LORA_DIOMAPPING1_DIO0_00);
+                                  SX127X_RF_LORA_DIOMAPPING1_DIO0_MASK &
+                                  SX127X_RF_LORA_DIOMAPPING1_DIO3_MASK) |
+                                 SX127X_RF_LORA_DIOMAPPING1_DIO0_00 |
+                                 SX127X_RF_LORA_DIOMAPPING1_DIO3_01);
             }
 
             sx127x_reg_write(dev, SX127X_REG_LR_FIFORXBASEADDR, 0);
@@ -312,6 +316,7 @@ void sx127x_set_rx(sx127x_t *dev)
     if (dev->settings.lora.rx_timeout != 0) {
         xtimer_set(&(dev->_internal.rx_timeout_timer), dev->settings.lora.rx_timeout);
     }
+
 
     if (dev->settings.lora.flags & SX127X_RX_CONTINUOUS_FLAG) {
         sx127x_set_op_mode(dev, SX127X_RF_LORA_OPMODE_RECEIVER);
@@ -350,17 +355,18 @@ void sx127x_set_tx(sx127x_t *dev)
             }
             else
             {
+                /* Enable TXDONE interrupt */
                 sx127x_reg_write(dev, SX127X_REG_LR_IRQFLAGSMASK,
                                  SX127X_RF_LORA_IRQFLAGS_RXTIMEOUT |
                                  SX127X_RF_LORA_IRQFLAGS_RXDONE |
                                  SX127X_RF_LORA_IRQFLAGS_PAYLOADCRCERROR |
                                  SX127X_RF_LORA_IRQFLAGS_VALIDHEADER |
-                                 /* RFLR_IRQFLAGS_TXDONE | */
+                                 /* SX127X_RF_LORA_IRQFLAGS_TXDONE | */
                                  SX127X_RF_LORA_IRQFLAGS_CADDONE |
                                  SX127X_RF_LORA_IRQFLAGS_FHSSCHANGEDCHANNEL |
                                  SX127X_RF_LORA_IRQFLAGS_CADDETECTED);
 
-                /* DIO0=TxDone */
+                /* Set TXDONE interrupt to the DIO0 line */
                 sx127x_reg_write(dev, SX127X_REG_DIOMAPPING1,
                                  (sx127x_reg_read(dev, SX127X_REG_DIOMAPPING1) &
                                   SX127X_RF_LORA_DIOMAPPING1_DIO0_MASK) |
@@ -370,10 +376,14 @@ void sx127x_set_tx(sx127x_t *dev)
         break;
     }
 
-    sx127x_set_state(dev, SX127X_RF_RX_RUNNING);
+    sx127x_set_state(dev, SX127X_RF_TX_RUNNING);
+
+    /* Start TX timeout timer */
     if (dev->settings.lora.tx_timeout != 0) {
         xtimer_set(&(dev->_internal.tx_timeout_timer), dev->settings.lora.tx_timeout);
     }
+
+    /* Put chip into transfer mode */
     sx127x_set_op_mode(dev, SX127X_RF_OPMODE_TRANSMITTER );
 }
 
@@ -830,13 +840,11 @@ void sx127x_set_symbol_timeout(sx127x_t *dev, uint16_t timeout)
 {
     DEBUG("[sx127x] Set symbol timeout: %d\n", timeout);
 
-    dev->settings.lora.rx_timeout = timeout;
-
     uint8_t config2_reg = sx127x_reg_read(dev, SX127X_REG_LR_MODEMCONFIG2);
     config2_reg &= SX127X_RF_LORA_MODEMCONFIG2_SYMBTIMEOUTMSB_MASK;
     config2_reg |= (timeout >> 8) & ~SX127X_RF_LORA_MODEMCONFIG2_SYMBTIMEOUTMSB_MASK;
     sx127x_reg_write(dev, SX127X_REG_LR_MODEMCONFIG2, config2_reg);
-    sx127x_reg_write(dev, SX127X_REG_LR_SYMBTIMEOUTLSB,timeout & 0xFF);
+    sx127x_reg_write(dev, SX127X_REG_LR_SYMBTIMEOUTLSB, timeout & 0xFF);
 }
 
 bool sx127x_get_iq_invert(const sx127x_t *dev)

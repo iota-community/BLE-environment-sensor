@@ -124,8 +124,8 @@ typedef struct {
  * @param[in]   buf         input buffer
  * @param[in]   bufsize     size of @p buf
  *
- * @returns     0 on success
- * @returns     <0 otherwise
+ * @returns     success code UART_OK on success
+ * @returns     error code UART_NODEV or UART_NOBAUD otherwise
  */
 int at_dev_init(at_dev_t *dev, uart_t uart, uint32_t baudrate, char *buf, size_t bufsize);
 
@@ -219,6 +219,18 @@ int at_expect_bytes(at_dev_t *dev, const char *bytes, uint32_t timeout);
  * @param[in]   len     number of bytes to send
  */
 void at_send_bytes(at_dev_t *dev, const char *bytes, size_t len);
+
+/**
+ * @brief   Receive raw bytes from a device
+ *
+ * @param[in]   dev     device to operate on
+ * @param[in]   bytes   buffer where store received bytes
+ * @param[in]   len     maximum number of bytes to receive
+ * @param[in]   timeout timeout (in usec) of inactivity to finish read
+ *
+ * @returns     Number of bytes read, eventually zero if no bytes available
+ */
+ssize_t at_recv_bytes(at_dev_t *dev, char *bytes, size_t len, uint32_t timeout);
 
 /**
  * @brief   Send command to device

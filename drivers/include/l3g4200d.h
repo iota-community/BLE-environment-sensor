@@ -9,13 +9,17 @@
 /**
  * @defgroup    drivers_l3g4200d L3G4200D gyroscope
  * @ingroup     drivers_sensors
+ * @ingroup     drivers_saul
  * @brief       Device driver for the L3G4200D gyroscope
+ *
+ * This driver provides @ref drivers_saul capabilities.
+ *
+ * @note The current state of the driver only implements a very basic polling mode.
+ *
  * @{
  *
  * @file
  * @brief       Device driver interface for the L3G4200D gyroscope
- *
- * @note The current state of the driver only implements a very basic polling mode.
  *
  * @author      Hauke Petersen <hauke.petersen@fu-berlin.de>
  */
@@ -91,8 +95,8 @@ typedef struct {
  * @brief   Device descriptor for L3G4200D sensors
  */
 typedef struct {
-    l3g4200d_params_t params; /**< device initialization parameters */
-    int scale;                /**< internal scaling factor to normalize results */
+    l3g4200d_params_t params;     /**< device initialization parameters */
+    int32_t scale;                /**< internal scaling factor to normalize results */
 } l3g4200d_t;
 
 /**
