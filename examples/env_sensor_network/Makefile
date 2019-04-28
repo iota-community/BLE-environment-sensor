@@ -49,7 +49,9 @@ USEMODULE += pthread
 
 #Application specific
 USEPKG += nanopb
-USEMODULE += dht
+USEMODULE += bmx280
+USEMODULE += tsl2561
+#USEMODULE += veml6070
 USEMODULE += saul_default
 
 # Comment this out to disable code in RIOT that does safety checking
