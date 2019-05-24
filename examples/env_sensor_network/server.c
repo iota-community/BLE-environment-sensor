@@ -57,7 +57,7 @@ void clear_socket_buffer(void) {
 environmentSensors_FeatureResponse sensor_node_features = {
         .hasTemperature = true,
         .hasAtmosphericPressure = false,
-        .hasHumanity = true,
+        .hasHumanity = false,
         .hasPm2_5 = false,
 };
 
@@ -180,8 +180,9 @@ void handle_env_sensor_feature_request(int sock, struct sockaddr_in6 *client_add
 
 extern void sensors_read_values(void);
 extern environmentSensors_SingleDataPoint * sensors_get_temp_value(void);
-extern environmentSensors_SingleDataPoint * sensors_get_hum_value(void);
+//extern environmentSensors_SingleDataPoint * sensors_get_hum_value(void);
 
+environmentSensors_DataResponse dataResponse;
 void handle_env_sensor_data_request(int sock, struct sockaddr_in6 *client_addr_ptr) {
     clear_encode_buffer();
     sensors_read_values();
@@ -190,13 +191,14 @@ void handle_env_sensor_data_request(int sock, struct sockaddr_in6 *client_addr_p
     encode_buffer_length = 1;
 
     environmentSensors_SingleDataPoint * temp_data_point = sensors_get_temp_value();
-    environmentSensors_SingleDataPoint * hum_data_point = sensors_get_hum_value();
+    //environmentSensors_SingleDataPoint * hum_data_point = sensors_get_hum_value();
 
-    environmentSensors_DataResponse dataResponse;
+
     dataResponse.has_temperature = true;
     dataResponse.temperature = *temp_data_point;
-    dataResponse.has_humanity = true;
-    dataResponse.humanity = *hum_data_point;
+
+    //dataResponse.has_humanity = true;
+    //dataResponse.humanity = *hum_data_point;
 
     encode_buffer_length +=
             env_sensor_data_response_encode(
