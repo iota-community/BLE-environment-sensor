@@ -38,8 +38,8 @@ extern "C" {
  * @name    Set the default baudrate to 500K for this board
  * @{
  */
-#ifndef UART_STDIO_BAUDRATE
-#   define UART_STDIO_BAUDRATE (500000U)
+#ifndef STDIO_UART_BAUDRATE
+#   define STDIO_UART_BAUDRATE (500000U)
 #endif
 /** @} */
 
@@ -51,7 +51,6 @@ extern "C" {
  */
 #define XTIMER_WIDTH        (16U)
 #define XTIMER_OVERHEAD     (6U)
-#define XTIMER_SHOOT_EARLY  (3U)
 /** @} */
 
 /**

@@ -17,7 +17,7 @@ APPKEY ?= 00000000000000000000000000000000
 DRIVER ?= sx1276
 
 # Default region is Europe and default band is 868MHz
-REGION ?= EU868
+LORA_REGION ?= EU868
 
 # Include the Semtech-loramac package
 USEPKG += semtech-loramac
@@ -26,7 +26,6 @@ USEMODULE += $(DRIVER)
 USEMODULE += fmt
 FEATURES_REQUIRED += periph_rtc
 
-CFLAGS += -DREGION_$(REGION)
 CFLAGS += -DDEVEUI=\"$(DEVEUI)\" -DAPPEUI=\"$(APPEUI)\" -DAPPKEY=\"$(APPKEY)\"
 
 # Comment this out to disable code in RIOT that does safety checking

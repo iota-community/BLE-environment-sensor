@@ -7,9 +7,7 @@
  */
 
 /**
- * @defgroup    boards_nucleo-f334r8 STM32 Nucleo-F334R8
- * @ingroup     boards_common_nucleo64
- * @brief       Support for the STM32 Nucleo-F334R8
+ * @ingroup     boards_nucleo-f334r8
  * @{
  *
  * @file
@@ -23,6 +21,7 @@
 #define PERIPH_CONF_H
 
 #include "periph_cpu.h"
+#include "cfg_timer_tim2.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -58,25 +57,6 @@ extern "C" {
 /** @} */
 
 /**
- * @name   Timer configuration
- * @{
- */
-static const timer_conf_t timer_config[] = {
-    {
-        .dev      = TIM2,
-        .max      = 0xffffffff,
-        .rcc_mask = RCC_APB1ENR_TIM2EN,
-        .bus      = APB1,
-        .irqn     = TIM2_IRQn
-    }
-};
-
-#define TIMER_0_ISR         (isr_tim2)
-
-#define TIMER_NUMOF         (sizeof(timer_config) / sizeof(timer_config[0]))
-/** @} */
-
-/**
  * @name   UART configuration
  * @{
  */
@@ -90,12 +70,34 @@ static const uart_conf_t uart_config[] = {
         .tx_af    = GPIO_AF7,
         .bus      = APB1,
         .irqn     = USART2_IRQn
+    },
+    {
+        .dev        = USART1,
+        .rcc_mask   = RCC_APB2ENR_USART1EN,
+        .rx_pin     = GPIO_PIN(PORT_A, 10),
+        .tx_pin     = GPIO_PIN(PORT_A,  9),
+        .rx_af      = GPIO_AF7,
+        .tx_af      = GPIO_AF7,
+        .bus        = APB2,
+        .irqn       = USART1_IRQn
+    },
+    {
+        .dev        = USART3,
+        .rcc_mask   = RCC_APB1ENR_USART3EN,
+        .rx_pin     = GPIO_PIN(PORT_B, 11),
+        .tx_pin     = GPIO_PIN(PORT_B, 10),
+        .rx_af      = GPIO_AF7,
+        .tx_af      = GPIO_AF7,
+        .bus        = APB1,
+        .irqn       = USART3_IRQn
     }
 };
 
 #define UART_0_ISR          (isr_usart2)
+#define UART_1_ISR          (isr_usart1)
+#define UART_2_ISR          (isr_usart3)
 
-#define UART_NUMOF          (sizeof(uart_config) / sizeof(uart_config[0]))
+#define UART_NUMOF          ARRAY_SIZE(uart_config)
 /** @} */
 
 /**
@@ -115,7 +117,7 @@ static const pwm_conf_t pwm_config[] = {
     }
 };
 
-#define PWM_NUMOF           (sizeof(pwm_config) / sizeof(pwm_config[0]))
+#define PWM_NUMOF           ARRAY_SIZE(pwm_config)
 /** @} */
 
 /**
@@ -155,7 +157,7 @@ static const spi_conf_t spi_config[] = {
     }
 };
 
-#define SPI_NUMOF           (sizeof(spi_config) / sizeof(spi_config[0]))
+#define SPI_NUMOF           ARRAY_SIZE(spi_config)
 /** @} */
 
 #ifdef __cplusplus

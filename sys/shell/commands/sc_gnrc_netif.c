@@ -19,6 +19,7 @@
  */
 
 #include <stdio.h>
+#include <string.h>
 
 #include "net/ipv6/addr.h"
 #include "net/gnrc.h"
@@ -42,11 +43,6 @@
  * @brief   Threshold for listed option flags
  */
 #define _LINE_THRESHOLD                 (8U)
-
-/**
- * @brief   Determine length of array in elements
- */
-#define _ARRAY_LEN(x)                   (sizeof(x) / sizeof(x[0]))
 
 /**
  * @brief   Flag command mapping
@@ -176,9 +172,9 @@ static void _set_usage(char *cmd_name)
 static void _flag_usage(char *cmd_name)
 {
     printf("usage: %s <if_id> [-]{", cmd_name);
-    for (unsigned i = 0; i < _ARRAY_LEN(flag_cmds); i++) {
+    for (unsigned i = 0; i < ARRAY_SIZE(flag_cmds); i++) {
         printf("%s", flag_cmds[i].name);
-        if (i < (_ARRAY_LEN(flag_cmds) - 1)) {
+        if (i < (ARRAY_SIZE(flag_cmds) - 1)) {
             printf("|");
         }
     }
@@ -233,10 +229,10 @@ static void _print_netopt(netopt_t opt)
             break;
 
         case NETOPT_HOP_LIMIT:
-            printf("MTU");
+            printf("hop limit");
             break;
 
-        case NETOPT_MAX_PACKET_SIZE:
+        case NETOPT_MAX_PDU_SIZE:
             printf("MTU");
             break;
 
@@ -347,7 +343,6 @@ static unsigned _netif_list_flag(kernel_pid_t iface, netopt_t opt, char *str,
 static void _netif_list_ipv6(ipv6_addr_t *addr, uint8_t flags)
 {
     char addr_str[IPV6_ADDR_MAX_STR_LEN];
-    unsigned line_thresh = _LINE_THRESHOLD;
 
     printf("inet6 addr: ");
     ipv6_addr_to_str(addr_str, addr, sizeof(addr_str));
@@ -361,30 +356,34 @@ static void _netif_list_ipv6(ipv6_addr_t *addr, uint8_t flags)
     if (flags & GNRC_NETIF_IPV6_ADDRS_FLAGS_ANYCAST) {
         printf(" [anycast]");
     }
-    switch (flags & GNRC_NETIF_IPV6_ADDRS_FLAGS_STATE_MASK) {
-        case GNRC_NETIF_IPV6_ADDRS_FLAGS_STATE_TENTATIVE:
-            printf("  TNT");
-            break;
-        case GNRC_NETIF_IPV6_ADDRS_FLAGS_STATE_DEPRECATED:
-            printf("  DPR");
-            break;
-        case GNRC_NETIF_IPV6_ADDRS_FLAGS_STATE_VALID:
-            printf("  VAL");
-            break;
+    if (flags & GNRC_NETIF_IPV6_ADDRS_FLAGS_STATE_TENTATIVE) {
+        printf("  TNT[%u]",
+               flags & GNRC_NETIF_IPV6_ADDRS_FLAGS_STATE_TENTATIVE);
     }
-    line_thresh = _newline(0U, line_thresh);
+    else {
+        switch (flags & GNRC_NETIF_IPV6_ADDRS_FLAGS_STATE_MASK) {
+            case GNRC_NETIF_IPV6_ADDRS_FLAGS_STATE_DEPRECATED:
+                printf("  DPR");
+                break;
+            case GNRC_NETIF_IPV6_ADDRS_FLAGS_STATE_VALID:
+                printf("  VAL");
+                break;
+            default:
+                printf("  UNK");
+                break;
+        }
+    }
+    _newline(0U, _LINE_THRESHOLD);
 }
 
 static void _netif_list_groups(ipv6_addr_t *addr)
 {
-    unsigned line_thresh = _LINE_THRESHOLD;
-
     if ((ipv6_addr_is_multicast(addr))) {
         char addr_str[IPV6_ADDR_MAX_STR_LEN];
         ipv6_addr_to_str(addr_str, addr, sizeof(addr_str));
         printf("inet6 group: %s", addr_str);
     }
-    line_thresh = _newline(0U, line_thresh);
+    _newline(0U, _LINE_THRESHOLD);
 }
 #endif
 
@@ -498,8 +497,13 @@ static void _netif_list(kernel_pid_t iface)
                                    line_thresh);
     line_thresh = _netif_list_flag(iface, NETOPT_CHANNEL_HOP, "CHAN_HOP",
                                    line_thresh);
+    res = gnrc_netapi_get(iface, NETOPT_MAX_PDU_SIZE, 0, &u16, sizeof(u16));
+    if (res > 0) {
+        printf("L2-PDU:%" PRIu16 " ", u16);
+        line_thresh++;
+    }
 #ifdef MODULE_GNRC_IPV6
-    res = gnrc_netapi_get(iface, NETOPT_MAX_PACKET_SIZE, GNRC_NETTYPE_IPV6, &u16, sizeof(u16));
+    res = gnrc_netapi_get(iface, NETOPT_MAX_PDU_SIZE, GNRC_NETTYPE_IPV6, &u16, sizeof(u16));
     if (res > 0) {
         printf("MTU:%" PRIu16 "  ", u16);
         line_thresh++;
@@ -516,6 +520,9 @@ static void _netif_list(kernel_pid_t iface)
 #endif
     line_thresh = _netif_list_flag(iface, NETOPT_IPV6_SND_RTR_ADV, "RTR_ADV  ",
                                    line_thresh);
+#ifdef MODULE_GNRC_SIXLOWPAN
+    line_thresh = _netif_list_flag(iface, NETOPT_6LO, "6LO  ", line_thresh);
+#endif
 #ifdef MODULE_GNRC_SIXLOWPAN_IPHC
     line_thresh += _LINE_THRESHOLD + 1; /* enforce linebreak after this option */
     line_thresh = _netif_list_flag(iface, NETOPT_6LO_IPHC, "IPHC  ",
@@ -532,7 +539,7 @@ static void _netif_list(kernel_pid_t iface)
     printf("Link type: %s",
            (gnrc_netapi_get(iface, NETOPT_IS_WIRED, 0, &u16, sizeof(u16)) > 0) ?
             "wired" : "wireless");
-    line_thresh = _newline(0U, ++line_thresh);
+    _newline(0U, ++line_thresh);
     res = gnrc_netapi_get(iface, NETOPT_IPV6_ADDR, 0, ipv6_addrs,
                           sizeof(ipv6_addrs));
     if (res >= 0) {
@@ -1025,7 +1032,7 @@ static int _netif_set(char *cmd_name, kernel_pid_t iface, char *key, char *value
     }
 #ifdef MODULE_GNRC_IPV6
     else if (strcmp("mtu", key) == 0) {
-        return _netif_set_u16(iface, NETOPT_MAX_PACKET_SIZE, GNRC_NETTYPE_IPV6,
+        return _netif_set_u16(iface, NETOPT_MAX_PDU_SIZE, GNRC_NETTYPE_IPV6,
                               value);
     }
 #endif
@@ -1061,7 +1068,7 @@ static int _netif_flag(char *cmd, kernel_pid_t iface, char *flag)
         set = NETOPT_DISABLE;
         flag++;
     }
-    for (unsigned i = 0; i < _ARRAY_LEN(flag_cmds); i++) {
+    for (unsigned i = 0; i < ARRAY_SIZE(flag_cmds); i++) {
         if (strcmp(flag_cmds[i].name, flag) == 0) {
             return _netif_set_flag(iface, flag_cmds[i].opt, set);
         }

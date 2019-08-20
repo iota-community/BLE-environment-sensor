@@ -177,9 +177,24 @@ void auto_init(void)
     extern void nimble_riot_init(void);
     nimble_riot_init();
 #endif
+#ifdef MODULE_AUTO_INIT_LORAMAC
+    extern void auto_init_loramac(void);
+    auto_init_loramac();
+#endif
+
+/* initialize USB devices */
+#ifdef MODULE_AUTO_INIT_USBUS
+    extern void auto_init_usb(void);
+    auto_init_usb();
+#endif
 
 /* initialize network devices */
 #ifdef MODULE_AUTO_INIT_GNRC_NETIF
+
+#ifdef MODULE_STM32_ETH
+    extern void auto_init_stm32_eth(void);
+    auto_init_stm32_eth();
+#endif
 
 #ifdef MODULE_AT86RF2XX
     extern void auto_init_at86rf2xx(void);
@@ -189,6 +204,11 @@ void auto_init(void)
 #ifdef MODULE_MRF24J40
     extern void auto_init_mrf24j40(void);
     auto_init_mrf24j40();
+#endif
+
+#ifdef MODULE_CC110X
+    extern void auto_init_cc110x(void);
+    auto_init_cc110x();
 #endif
 
 #ifdef MODULE_CC2420
@@ -211,11 +231,13 @@ void auto_init(void)
     auto_init_esp_eth();
 #endif
 
+/* don't change the order of auto_init_esp_now and auto_init_esp_wifi */
 #ifdef MODULE_ESP_NOW
     extern void auto_init_esp_now(void);
     auto_init_esp_now();
 #endif
 
+/* don't change the order of auto_init_esp_now and auto_init_esp_wifi */
 #ifdef MODULE_ESP_WIFI
     extern void auto_init_esp_wifi(void);
     auto_init_esp_wifi();
@@ -231,11 +253,6 @@ void auto_init(void)
     auto_init_slipdev();
 #endif
 
-#ifdef MODULE_CC110X
-    extern void auto_init_cc110x(void);
-    auto_init_cc110x();
-#endif
-
 #ifdef MODULE_CC2538_RF
     extern void auto_init_cc2538_rf(void);
     auto_init_cc2538_rf();
@@ -249,6 +266,11 @@ void auto_init(void)
 #ifdef MODULE_KW2XRF
     extern void auto_init_kw2xrf(void);
     auto_init_kw2xrf();
+#endif
+
+#ifdef MODULE_USBUS_CDC_ECM
+    extern void auto_init_netdev_cdcecm(void);
+    auto_init_netdev_cdcecm();
 #endif
 
 #ifdef MODULE_NETDEV_TAP
@@ -276,7 +298,7 @@ void auto_init(void)
     auto_init_w5100();
 #endif
 
-#ifdef MODULE_SX127X
+#if defined(MODULE_SX127X) && !defined(MODULE_SEMTECH_LORAMAC)
     extern void auto_init_sx127x(void);
     auto_init_sx127x();
 #endif
@@ -364,6 +386,10 @@ void auto_init(void)
 #ifdef MODULE_DS18
     extern void auto_init_ds18(void);
     auto_init_ds18();
+#endif
+#ifdef MODULE_DS75LX
+    extern void auto_init_ds75lx(void);
+    auto_init_ds75lx();
 #endif
 #ifdef MODULE_FXOS8700
     extern void auto_init_fxos8700(void);

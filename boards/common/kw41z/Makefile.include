@@ -1,0 +1,12 @@
+# define the cpu used by the board
+export CPU = kinetis
+export CPU_MODEL = mkw41z512vht4
+
+# include this module into the build
+INCLUDES += -I$(RIOTBOARD)/common/kw41z/include
+
+# This board comes with OpenSDA configured for JLink compatibility
+DEBUG_ADAPTER ?= jlink
+
+# Include default FRDM board config
+include $(RIOTBOARD)/common/frdm/Makefile.include

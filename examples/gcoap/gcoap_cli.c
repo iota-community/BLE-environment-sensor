@@ -29,25 +29,51 @@
 #define ENABLE_DEBUG (0)
 #include "debug.h"
 
+static ssize_t _encode_link(const coap_resource_t *resource, char *buf,
+                            size_t maxlen, coap_link_encoder_ctx_t *context);
 static void _resp_handler(unsigned req_state, coap_pkt_t* pdu,
                           sock_udp_ep_t *remote);
 static ssize_t _stats_handler(coap_pkt_t* pdu, uint8_t *buf, size_t len, void *ctx);
 static ssize_t _riot_board_handler(coap_pkt_t* pdu, uint8_t *buf, size_t len, void *ctx);
 
-/* CoAP resources */
+/* CoAP resources. Must be sorted by path (ASCII order). */
 static const coap_resource_t _resources[] = {
     { "/cli/stats", COAP_GET | COAP_PUT, _stats_handler, NULL },
     { "/riot/board", COAP_GET, _riot_board_handler, NULL },
 };
 
+static const char *_link_params[] = {
+    ";ct=0;rt=\"count\"",
+    NULL
+};
+
 static gcoap_listener_t _listener = {
     &_resources[0],
-    sizeof(_resources) / sizeof(_resources[0]),
+    ARRAY_SIZE(_resources),
+    _encode_link,
     NULL
 };
 
 /* Counts requests sent by CLI. */
 static uint16_t req_count = 0;
+
+/* Adds link format params to resource list */
+static ssize_t _encode_link(const coap_resource_t *resource, char *buf,
+                            size_t maxlen, coap_link_encoder_ctx_t *context) {
+    ssize_t res = gcoap_encode_link(resource, buf, maxlen, context);
+    if (res > 0) {
+        if (_link_params[context->link_pos]
+                && (strlen(_link_params[context->link_pos]) < (maxlen - res))) {
+            if (buf) {
+                memcpy(buf+res, _link_params[context->link_pos],
+                       strlen(_link_params[context->link_pos]));
+            }
+            return res + strlen(_link_params[context->link_pos]);
+        }
+    }
+
+    return res;
+}
 
 /*
  * Response callback.
@@ -72,8 +98,9 @@ static void _resp_handler(unsigned req_state, coap_pkt_t* pdu,
                                                 coap_get_code_class(pdu),
                                                 coap_get_code_detail(pdu));
     if (pdu->payload_len) {
-        if (pdu->content_type == COAP_FORMAT_TEXT
-                || pdu->content_type == COAP_FORMAT_LINK
+        unsigned content_type = coap_get_content_type(pdu);
+        if (content_type == COAP_FORMAT_TEXT
+                || content_type == COAP_FORMAT_LINK
                 || coap_get_code_class(pdu) == COAP_CLASS_CLIENT_FAILURE
                 || coap_get_code_class(pdu) == COAP_CLASS_SERVER_FAILURE) {
             /* Expecting diagnostic payload in failure cases */
@@ -108,11 +135,12 @@ static ssize_t _stats_handler(coap_pkt_t* pdu, uint8_t *buf, size_t len, void *c
     switch(method_flag) {
         case COAP_GET:
             gcoap_resp_init(pdu, buf, len, COAP_CODE_CONTENT);
+            coap_opt_add_format(pdu, COAP_FORMAT_TEXT);
+            size_t resp_len = coap_opt_finish(pdu, COAP_OPT_FINISH_PAYLOAD);
 
             /* write the response buffer with the request count value */
-            size_t payload_len = fmt_u16_dec((char *)pdu->payload, req_count);
-
-            return gcoap_finish(pdu, payload_len, COAP_FORMAT_TEXT);
+            resp_len += fmt_u16_dec((char *)pdu->payload, req_count);
+            return resp_len;
 
         case COAP_PUT:
             /* convert the payload to an integer and update the internal
@@ -135,9 +163,18 @@ static ssize_t _riot_board_handler(coap_pkt_t *pdu, uint8_t *buf, size_t len, vo
 {
     (void)ctx;
     gcoap_resp_init(pdu, buf, len, COAP_CODE_CONTENT);
+    coap_opt_add_format(pdu, COAP_FORMAT_TEXT);
+    size_t resp_len = coap_opt_finish(pdu, COAP_OPT_FINISH_PAYLOAD);
+
     /* write the RIOT board name in the response buffer */
-    memcpy(pdu->payload, RIOT_BOARD, strlen(RIOT_BOARD));
-    return gcoap_finish(pdu, strlen(RIOT_BOARD), COAP_FORMAT_TEXT);
+    if (pdu->payload_len >= strlen(RIOT_BOARD)) {
+        memcpy(pdu->payload, RIOT_BOARD, strlen(RIOT_BOARD));
+        return resp_len + strlen(RIOT_BOARD);
+    }
+    else {
+        puts("gcoap_cli: msg buffer too small");
+        return gcoap_response(pdu, buf, len, COAP_CODE_INTERNAL_SERVER_ERROR);
+    }
 }
 
 static size_t _send(uint8_t *buf, size_t len, char *addr_str, char *port_str)
@@ -185,7 +222,7 @@ static size_t _send(uint8_t *buf, size_t len, char *addr_str, char *port_str)
         return 0;
     }
 
-    bytes_sent = gcoap_req_send2(buf, len, &remote, _resp_handler);
+    bytes_sent = gcoap_req_send(buf, len, &remote, _resp_handler);
     if (bytes_sent > 0) {
         req_count++;
     }
@@ -216,7 +253,7 @@ int gcoap_cli_cmd(int argc, char **argv)
 
     /* if not 'info', must be a method code */
     int code_pos = -1;
-    for (size_t i = 0; i < sizeof(method_codes) / sizeof(char*); i++) {
+    for (size_t i = 0; i < ARRAY_SIZE(method_codes); i++) {
         if (strcmp(argv[1], method_codes[i]) == 0) {
             code_pos = i;
         }
@@ -241,16 +278,23 @@ int gcoap_cli_cmd(int argc, char **argv)
     if (((argc == apos + 3) && (code_pos == 0)) ||
         ((argc == apos + 4) && (code_pos != 0))) {
         gcoap_req_init(&pdu, &buf[0], GCOAP_PDU_BUF_SIZE, code_pos+1, argv[apos+2]);
-        if (argc == apos + 4) {
-            memcpy(pdu.payload, argv[apos+3], strlen(argv[apos+3]));
-        }
         coap_hdr_set_type(pdu.hdr, msg_type);
 
-        if (argc == apos + 4) {
-            len = gcoap_finish(&pdu, strlen(argv[apos+3]), COAP_FORMAT_TEXT);
+        size_t paylen = (argc == apos + 4) ? strlen(argv[apos+3]) : 0;
+        if (paylen) {
+            coap_opt_add_format(&pdu, COAP_FORMAT_TEXT);
+            len = coap_opt_finish(&pdu, COAP_OPT_FINISH_PAYLOAD);
+            if (pdu.payload_len >= paylen) {
+                memcpy(pdu.payload, argv[apos+3], paylen);
+                len += paylen;
+            }
+            else {
+                puts("gcoap_cli: msg buffer too small");
+                return 1;
+            }
         }
         else {
-            len = gcoap_finish(&pdu, 0, COAP_FORMAT_NONE);
+            len = coap_opt_finish(&pdu, COAP_OPT_FINISH_NONE);
         }
 
         printf("gcoap_cli: sending msg ID %u, %u bytes\n", coap_get_id(&pdu),
@@ -264,8 +308,9 @@ int gcoap_cli_cmd(int argc, char **argv)
                     &_resources[0])) {
             case GCOAP_OBS_INIT_OK:
                 DEBUG("gcoap_cli: creating /cli/stats notification\n");
-                size_t payload_len = fmt_u16_dec((char *)pdu.payload, req_count);
-                len = gcoap_finish(&pdu, payload_len, COAP_FORMAT_TEXT);
+                coap_opt_add_format(&pdu, COAP_FORMAT_TEXT);
+                len = coap_opt_finish(&pdu, COAP_OPT_FINISH_PAYLOAD);
+                len += fmt_u16_dec((char *)pdu.payload, req_count);
                 gcoap_obs_send(&buf[0], len, &_resources[0]);
                 break;
             case GCOAP_OBS_INIT_UNUSED:

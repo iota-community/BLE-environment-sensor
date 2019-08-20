@@ -30,6 +30,14 @@ extern "C" {
 #endif
 
 /**
+ * @brief       A deprecated alias for @ref NETOPT_MAX_PDU_SIZE
+ *
+ * @deprecated  Please use @ref NETOPT_MAX_PDU_SIZE instead of
+ *              `NETOPT_MAX_PACKET_SIZE`
+ */
+#define NETOPT_MAX_PACKET_SIZE NETOPT_MAX_PDU_SIZE
+
+/**
  * @brief   Global list of configuration options available throughout the
  *          network stack, e.g. by netdev and netapi
  *
@@ -60,6 +68,7 @@ typedef enum {
      * Ethernet      | 6      | device MAC address
      * nrfmin        | 2      | device short address
      * CC110x        | 1      | device address
+     * LoRaWAN       | 4      | device address
      */
     NETOPT_ADDRESS,
 
@@ -71,6 +80,7 @@ typedef enum {
      * IEEE 802.15.4 | 8        | device long address (EUI-64), @ref eui64_t
      * nrfmin        | 8        | device long address (based on short address)
      * BLE           | 8        | device long address (EUI-64), @ref eui64_t
+     * LoRaWAN       | 8        | Device EUI
      */
     NETOPT_ADDRESS_LONG,
     /**
@@ -84,7 +94,8 @@ typedef enum {
     /**
      * @brief   (uint16_t) network ID
      *
-     * Examples for this include the PAN ID in IEEE 802.15.4
+     * Examples for this include the PAN ID in IEEE 802.15.4 and netid in
+     * LoRaWAN (uint32_t in this case)
      */
     NETOPT_NID,
 
@@ -99,6 +110,11 @@ typedef enum {
      * @see <a href="https://tools.ietf.org/html/rfc4291#section-2.5.1">
      *          RFC 4291, section 2.5.1
      *      </a>
+     *
+     * @deprecated  Do not implement this in a network device. Other APIs
+     *              utilizing [netopt](@ref net_netopt) may still implement it.
+     *              Existing support of drivers will be dropped after the
+     *              2019.07 release.
      *
      * The generation of the interface identifier is dependent on the link-layer.
      * Please refer to the appropriate IPv6 over `<link>` specification for
@@ -168,9 +184,9 @@ typedef enum {
      */
     NETOPT_TX_POWER,
     /**
-     * @brief   (uint16_t) maximum packet size a network module can handle
+     * @brief   (uint16_t) maximum protocol data unit
      */
-    NETOPT_MAX_PACKET_SIZE,
+    NETOPT_MAX_PDU_SIZE,
     /**
      * @brief   (@ref netopt_enable_t) frame preloading
      *
@@ -517,6 +533,13 @@ typedef enum {
     NETOPT_IQ_INVERT,
 
     /**
+     * @brief   (@ref netopt_enable_t) 6Lo support
+     *
+     * @see [RFC 4944](https://tools.ietf.org/html/rfc4944)
+     */
+    NETOPT_6LO,
+
+    /**
      * @brief   (@ref netopt_enable_t) header compression
      *
      * @see [RFC 6282](https://tools.ietf.org/html/rfc6282)
@@ -553,6 +576,91 @@ typedef enum {
      * incoming frames until unset.
      */
     NETOPT_PHY_BUSY,
+
+    /**
+     * @brief   (uint8_t*) LoRaWAN application EUI (8 bytes length)
+     */
+    NETOPT_LORAWAN_APPEUI,
+
+    /**
+     * @brief   (uint8_t*) LoRaWAN application key (16 bytes length)
+     */
+    NETOPT_LORAWAN_APPKEY,
+
+    /**
+     * @brief   (uint8_t*) LoRaWAN network session key (16 bytes length)
+     */
+    NETOPT_LORAWAN_NWKSKEY,
+    /**
+     * @brief   (uint8_t*) LoRaWAN application session key (16 bytes length)
+     */
+    NETOPT_LORAWAN_APPSKEY,
+
+     /**
+     * @brief   (uint8_t) LoRaWAN device class (A, B, C)
+     * - LoRaWAN: @ref loramac_class_t
+     */
+    NETOPT_LORAWAN_DEVICE_CLASS,
+
+    /**
+     * @brief   (uint8_t) LoRaWAN datarate
+     * - LoRaWAN: @ref loramac_dr_idx_t
+     */
+    NETOPT_LORAWAN_DR,
+
+    /**
+     * @brief   (@ref netopt_enable_t) LoRaWAN adaptive datarate
+     */
+    NETOPT_LORAWAN_ADR,
+
+    /**
+     * @brief   (@ref netopt_enable_t) LoRaWAN public network
+     */
+    NETOPT_LORAWAN_PUBLIC_NETWORK,
+
+    /**
+     * @brief   (uint8_t) LoRaWAN TX application port
+     * - LoRaWAN: between 1 and 223 (included)
+     */
+    NETOPT_LORAWAN_TX_PORT,
+
+    /**
+     * @brief   (loramac_dr_idx_t) LoRaWAN datarate for second RX window
+     * - LoRaWAN: @ref loramac_dr_idx_t
+     */
+    NETOPT_LORAWAN_RX2_DR,
+
+    /**
+     * @brief   (uint32_t) LoRaWAN frequency used for second RX window
+     */
+    NETOPT_LORAWAN_RX2_FREQ,
+
+    /**
+     * @brief   (uint32_t) LoRaWAN maximum system overall timing error (ms)
+     */
+    NETOPT_LORAWAN_MAX_RX_ERROR,
+
+    /**
+     * @brief   (uint8_t) LoRaWAN maximum system overall timing error (symbols)
+     */
+    NETOPT_LORAWAN_MIN_RX_SYMBOL,
+
+    /**
+     * @brief   (uint8_t*) phy layer syncword
+     */
+    NETOPT_SYNCWORD,
+
+    /**
+     * @brief  (uint32_t) Get a random value from the device
+     *
+     * Nothing happens when set
+     */
+    NETOPT_RANDOM,
+
+    /**
+     * @brief (uint8_t) Get or set the number of PHY symbols before assuming there's no data
+     */
+    NETOPT_RX_SYMBOL_TIMEOUT,
 
     /* add more options if needed */
 

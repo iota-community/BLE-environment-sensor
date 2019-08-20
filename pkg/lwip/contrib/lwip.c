@@ -33,6 +33,15 @@
 #include "mrf24j40_params.h"
 #endif
 
+#ifdef MODULE_SOCKET_ZEP
+#include "socket_zep.h"
+#include "socket_zep_params.h"
+#endif
+
+#if defined(MODULE_ESP_WIFI) && defined(CPU_ESP32)
+#include "esp-wifi/esp_wifi_netdev.h"
+#endif
+
 #include "lwip.h"
 
 #define ENABLE_DEBUG    (0)
@@ -43,11 +52,19 @@
 #endif
 
 #ifdef MODULE_AT86RF2XX     /* is mutual exclusive with above ifdef */
-#define LWIP_NETIF_NUMOF        (sizeof(at86rf2xx_params) / sizeof(at86rf2xx_params[0]))
+#define LWIP_NETIF_NUMOF        ARRAY_SIZE(at86rf2xx_params)
 #endif
 
 #ifdef MODULE_MRF24J40     /* is mutual exclusive with above ifdef */
-#define LWIP_NETIF_NUMOF        (sizeof(mrf24j40_params) / sizeof(mrf24j40_params[0]))
+#define LWIP_NETIF_NUMOF        ARRAY_SIZE(mrf24j40_params)
+#endif
+
+#ifdef MODULE_SOCKET_ZEP   /* is mutual exclusive with above ifdef */
+#define LWIP_NETIF_NUMOF        ARRAY_SIZE(socket_zep_params)
+#endif
+
+#if defined(MODULE_ESP_WIFI) && defined(CPU_ESP32)  /* is mutual exclusive with above ifdef */
+#define LWIP_NETIF_NUMOF        (1)
 #endif
 
 #ifdef LWIP_NETIF_NUMOF
@@ -64,6 +81,15 @@ static at86rf2xx_t at86rf2xx_devs[LWIP_NETIF_NUMOF];
 
 #ifdef MODULE_MRF24J40
 static mrf24j40_t mrf24j40_devs[LWIP_NETIF_NUMOF];
+#endif
+
+#ifdef MODULE_SOCKET_ZEP
+static socket_zep_t socket_zep_devs[LWIP_NETIF_NUMOF];
+#endif
+
+#if defined(MODULE_ESP_WIFI) && defined(CPU_ESP32)
+extern esp_wifi_netdev_t _esp_wifi_dev;
+extern void esp_wifi_setup (esp_wifi_netdev_t* dev);
 #endif
 
 void lwip_bootstrap(void)
@@ -96,6 +122,22 @@ void lwip_bootstrap(void)
             DEBUG("Could not add at86rf2xx device\n");
             return;
         }
+    }
+#elif defined(MODULE_SOCKET_ZEP)
+    for (unsigned i = 0; i < LWIP_NETIF_NUMOF; i++) {
+        socket_zep_setup(&socket_zep_devs[i], &socket_zep_params[i]);
+        if (netif_add(&netif[i], &socket_zep_devs[i], lwip_netdev_init,
+                      tcpip_6lowpan_input) == NULL) {
+            DEBUG("Could not add socket_zep device\n");
+            return;
+        }
+    }
+#elif defined(MODULE_ESP_WIFI) && defined(CPU_ESP32)
+    esp_wifi_setup(&_esp_wifi_dev);
+    if (netif_add(&netif[0], &_esp_wifi_dev, lwip_netdev_init,
+                  tcpip_input) == NULL) {
+        DEBUG("Could not add esp_wifi device\n");
+        return;
     }
 #endif
     if (netif[0].state != NULL) {

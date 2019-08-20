@@ -1,6 +1,15 @@
 ifneq (,$(filter csma_sender,$(USEMODULE)))
   DIRS += net/link_layer/csma_sender
 endif
+ifneq (,$(filter eepreg,$(USEMODULE)))
+  DIRS += eepreg
+endif
+ifneq (,$(filter isrpipe_read_timeout,$(USEMODULE)))
+  DIRS += isrpipe/read_timeout
+endif
+ifneq (,$(filter posix_inet,$(USEMODULE)))
+  DIRS += posix/inet
+endif
 ifneq (,$(filter posix_semaphore,$(USEMODULE)))
   DIRS += posix/semaphore
 endif
@@ -15,6 +24,9 @@ ifneq (,$(filter pthread,$(USEMODULE)))
 endif
 ifneq (,$(filter shell_commands,$(USEMODULE)))
   DIRS += shell/commands
+endif
+ifneq (,$(filter test_utils_interactive_sync,$(USEMODULE)))
+  DIRS += test_utils/interactive_sync
 endif
 ifneq (,$(filter net_help,$(USEMODULE)))
   DIRS += net/crosslayer/net_help
@@ -39,12 +51,6 @@ ifneq (,$(filter ipv4_addr,$(USEMODULE)))
 endif
 ifneq (,$(filter ipv6_addr,$(USEMODULE)))
   DIRS += net/network_layer/ipv6/addr
-endif
-ifneq (,$(filter ipv6_ext_rh,$(USEMODULE)))
-  DIRS += net/network_layer/ipv6/ext/rh
-endif
-ifneq (,$(filter ipv6_ext,$(USEMODULE)))
-  DIRS += net/network_layer/ipv6/ext
 endif
 ifneq (,$(filter ipv6_hdr,$(USEMODULE)))
   DIRS += net/network_layer/ipv6/hdr
@@ -81,9 +87,6 @@ ifneq (,$(filter udp,$(USEMODULE)))
 endif
 ifneq (,$(filter tcp,$(USEMODULE)))
   DIRS += net/transport_layer/tcp
-endif
-ifneq (,$(filter hamming256,$(USEMODULE)))
-  DIRS += ecc/hamming256
 endif
 ifneq (,$(filter uhcpc,$(USEMODULE)))
   DIRS += net/application_layer/uhcp
@@ -124,17 +127,32 @@ endif
 ifneq (,$(filter l2filter,$(USEMODULE)))
   DIRS += net/link_layer/l2filter
 endif
+ifneq (,$(filter l2util,$(USEMODULE)))
+  DIRS += net/link_layer/l2util
+endif
 ifneq (,$(filter nanocoap,$(USEMODULE)))
   DIRS += net/application_layer/nanocoap
 endif
 ifneq (,$(filter skald,$(USEMODULE)))
-  DIRS += net/skald
+  DIRS += net/ble/skald
 endif
-ifneq (,$(filter rdcli_common,$(USEMODULE)))
-  DIRS += net/application_layer/rdcli_common
+ifneq (,$(filter cord_common,$(USEMODULE)))
+  DIRS += net/application_layer/cord/common
 endif
-ifneq (,$(filter rdcli_simple,$(USEMODULE)))
-    DIRS += net/application_layer/rdcli_simple
+ifneq (,$(filter cord_epsim,$(USEMODULE)))
+    DIRS += net/application_layer/cord/epsim
+endif
+ifneq (,$(filter cord_ep,$(USEMODULE)))
+    DIRS += net/application_layer/cord/ep
+endif
+ifneq (,$(filter bluetil_%,$(USEMODULE)))
+  DIRS += net/ble/bluetil
+endif
+ifneq (,$(filter usbus usbus_%,$(USEMODULE)))
+    DIRS += usb/usbus
+endif
+ifneq (,$(filter credman,$(USEMODULE)))
+  DIRS += net/credman
 endif
 
 DIRS += $(dir $(wildcard $(addsuffix /Makefile, $(USEMODULE))))

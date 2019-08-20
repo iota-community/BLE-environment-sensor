@@ -114,11 +114,25 @@ static const uart_conf_t uart_config[] = {
         .mode   = UART_MODE_8N1,
         .type   = KINETIS_UART,
     },
+    {
+        .dev    = UART0,
+        .freq   = CLOCK_CORECLOCK,
+        .pin_rx = GPIO_PIN(PORT_D, 6),
+        .pin_tx = GPIO_PIN(PORT_D, 7),
+        .pcr_rx = PORT_PCR_MUX(3),
+        .pcr_tx = PORT_PCR_MUX(3),
+        .irqn   = UART0_RX_TX_IRQn,
+        .scgc_addr = &SIM->SCGC4,
+        .scgc_bit = SIM_SCGC4_UART0_SHIFT,
+        .mode   = UART_MODE_8N1,
+        .type   = KINETIS_UART,
+    },
 };
 
 #define UART_0_ISR          (isr_uart1_rx_tx)
+#define UART_1_ISR          (isr_uart0_rx_tx)
 
-#define UART_NUMOF          (sizeof(uart_config) / sizeof(uart_config[0]))
+#define UART_NUMOF          ARRAY_SIZE(uart_config)
 /** @} */
 
 /**
@@ -127,17 +141,25 @@ static const uart_conf_t uart_config[] = {
  */
 static const adc_conf_t adc_config[] = {
     /* dev, pin, channel */
-    { .dev = ADC0, .pin = GPIO_UNDEF          , .chan =  0 }, /* ADC0_DP0 */
-    { .dev = ADC0, .pin = GPIO_UNDEF          , .chan = 19 }, /* ADC0_DM0 */
-    { .dev = ADC1, .pin = GPIO_UNDEF          , .chan =  0 }, /* ADC1_DP0 */
-    { .dev = ADC1, .pin = GPIO_UNDEF          , .chan = 19 }, /* ADC1_DM0 */
-    { .dev = ADC0, .pin = GPIO_PIN(PORT_B,  0), .chan =  8 }, /* PTB0 (Arduino A0) */
-    { .dev = ADC0, .pin = GPIO_PIN(PORT_B,  1), .chan =  9 }, /* PTB1 (Arduino A1) */
-    { .dev = ADC0, .pin = GPIO_PIN(PORT_C,  1), .chan = 15 }, /* PTC1 (Arduino A2) */
-    { .dev = ADC0, .pin = GPIO_PIN(PORT_C,  2), .chan =  4 }, /* PTC2 (Arduino A3) */
+    [ 0] = { .dev = ADC0, .pin = GPIO_UNDEF          , .chan =  0, .avg = ADC_AVG_MAX }, /* ADC0_DP0 */
+    [ 1] = { .dev = ADC0, .pin = GPIO_UNDEF          , .chan = 19, .avg = ADC_AVG_MAX }, /* ADC0_DM0 */
+    [ 2] = { .dev = ADC1, .pin = GPIO_UNDEF          , .chan =  0, .avg = ADC_AVG_MAX }, /* ADC1_DP0 */
+    [ 3] = { .dev = ADC1, .pin = GPIO_UNDEF          , .chan = 19, .avg = ADC_AVG_MAX }, /* ADC1_DM0 */
+    [ 4] = { .dev = ADC0, .pin = GPIO_PIN(PORT_B,  0), .chan =  8, .avg = ADC_AVG_MAX }, /* PTB0 (Arduino A0) */
+    [ 5] = { .dev = ADC0, .pin = GPIO_PIN(PORT_B,  1), .chan =  9, .avg = ADC_AVG_MAX }, /* PTB1 (Arduino A1) */
+    [ 6] = { .dev = ADC0, .pin = GPIO_PIN(PORT_C,  1), .chan = 15, .avg = ADC_AVG_MAX }, /* PTC1 (Arduino A2) */
+    [ 7] = { .dev = ADC0, .pin = GPIO_PIN(PORT_C,  2), .chan =  4, .avg = ADC_AVG_MAX }, /* PTC2 (Arduino A3) */
+    /* internal: temperature sensor */
+    /* The temperature sensor has a very high output impedance, it must not be
+     * sampled using hardware averaging, or the sampled values will be garbage */
+    [ 8] = { .dev = ADC0, .pin = GPIO_UNDEF, .chan = 26, .avg = ADC_AVG_NONE },
+    /* internal: band gap */
+    /* Note: the band gap buffer uses a bit of current and is turned off by default,
+     * Set PMC->REGSC |= PMC_REGSC_BGBE_MASK before reading or the input will be floating */
+    [ 9] = { .dev = ADC0, .pin = GPIO_UNDEF, .chan = 27, .avg = ADC_AVG_MAX },
 };
 
-#define ADC_NUMOF           (sizeof(adc_config) / sizeof(adc_config[0]))
+#define ADC_NUMOF           ARRAY_SIZE(adc_config)
 /*
  * K22F ADC reference settings:
  * 0: VREFH/VREFL external pin pair
@@ -164,7 +186,7 @@ static const pwm_conf_t pwm_config[] = {
     }
 };
 
-#define PWM_NUMOF           (sizeof(pwm_config) / sizeof(pwm_config[0]))
+#define PWM_NUMOF           ARRAY_SIZE(pwm_config)
 /** @} */
 
 
@@ -229,7 +251,7 @@ static const spi_conf_t spi_config[] = {
     }
 };
 
-#define SPI_NUMOF           (sizeof(spi_config) / sizeof(spi_config[0]))
+#define SPI_NUMOF           ARRAY_SIZE(spi_config)
 /** @} */
 
 
@@ -249,7 +271,7 @@ static const i2c_conf_t i2c_config[] = {
         .sda_pcr = (PORT_PCR_MUX(2) | PORT_PCR_ODE_MASK),
     },
 };
-#define I2C_NUMOF           (sizeof(i2c_config) / sizeof(i2c_config[0]))
+#define I2C_NUMOF           ARRAY_SIZE(i2c_config)
 #define I2C_0_ISR           (isr_i2c0)
 #define I2C_1_ISR           (isr_i2c1)
 /** @} */

@@ -7,9 +7,7 @@
  */
 
 /**
- * @defgroup    boards_nucleo-f446ze STM32 Nucleo-F446ZE
- * @ingroup     boards_common_nucleo144
- * @brief       Support for the STM32 Nucleo-F446ZE
+ * @ingroup     boards_nucleo-f446ze
  * @{
  *
  * @file
@@ -23,30 +21,13 @@
 
 #include "periph_cpu.h"
 #include "f4/cfg_clock_180_8_1.h"
+#include "cfg_i2c1_pb8_pb9.h"
 #include "cfg_spi_divtable.h"
+#include "cfg_timer_tim5.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-/**
- * @name    Timer configuration
- * @{
- */
-static const timer_conf_t timer_config[] = {
-    {
-        .dev      = TIM5,
-        .max      = 0xffffffff,
-        .rcc_mask = RCC_APB1ENR_TIM5EN,
-        .bus      = APB1,
-        .irqn     = TIM5_IRQn
-    }
-};
-
-#define TIMER_0_ISR         isr_tim5
-
-#define TIMER_NUMOF         (sizeof(timer_config) / sizeof(timer_config[0]))
-/** @} */
 
 /**
  * @name    UART configuration
@@ -104,7 +85,7 @@ static const uart_conf_t uart_config[] = {
 #define UART_2_ISR          (isr_usart2)
 #define UART_2_DMA_ISR      (isr_dma1_stream4)
 
-#define UART_NUMOF          (sizeof(uart_config) / sizeof(uart_config[0]))
+#define UART_NUMOF          ARRAY_SIZE(uart_config)
 /** @} */
 
 /**
@@ -134,7 +115,7 @@ static const pwm_conf_t pwm_config[] = {
     },
 };
 
-#define PWM_NUMOF           (sizeof(pwm_config) / sizeof(pwm_config[0]))
+#define PWM_NUMOF           ARRAY_SIZE(pwm_config)
 /** @} */
 
 /**
@@ -154,38 +135,7 @@ static const spi_conf_t spi_config[] = {
     }
 };
 
-#define SPI_NUMOF           (sizeof(spi_config) / sizeof(spi_config[0]))
-/** @} */
-
-/**
- * @name    I2C configuration
- * @{
- */
-static const i2c_conf_t i2c_config[] = {
-    {
-        .dev            = I2C1,
-        .speed          = I2C_SPEED_NORMAL,
-        .scl_pin        = GPIO_PIN(PORT_B, 8),
-        .sda_pin        = GPIO_PIN(PORT_B, 9),
-        .scl_af         = GPIO_AF4,
-        .sda_af         = GPIO_AF4,
-        .bus            = APB1,
-        .rcc_mask       = RCC_APB1ENR_I2C1EN,
-        .clk            = CLOCK_APB1,
-        .irqn           = I2C1_EV_IRQn
-    }
-};
-
-#define I2C_0_ISR           isr_i2c1_ev
-
-#define I2C_NUMOF           (sizeof(i2c_config) / sizeof(i2c_config[0]))
-/** @} */
-
-/**
- * @name    ADC configuration
- * @{
- */
-#define ADC_NUMOF          (0)
+#define SPI_NUMOF           ARRAY_SIZE(spi_config)
 /** @} */
 
 #ifdef __cplusplus

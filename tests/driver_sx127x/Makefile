@@ -1,8 +1,9 @@
+BOARD ?= b-l072z-lrwan1
+
 include ../Makefile.tests_common
 
-BOARD_INSUFFICIENT_MEMORY := nucleo-f031k6
-
-BOARD ?= nucleo-l152re
+BOARD_INSUFFICIENT_MEMORY := arduino-duemilanove arduino-leonardo arduino-nano\
+                             arduino-uno nucleo-f031k6
 
 USEMODULE += od
 USEMODULE += shell
@@ -14,8 +15,5 @@ DRIVER ?= sx1276
 
 # use SX1276 by default
 USEMODULE += $(DRIVER)
-
-FEATURES_REQUIRED ?= periph_spi
-FEATURES_REQUIRED ?= periph_gpio
 
 include $(RIOTBASE)/Makefile.include

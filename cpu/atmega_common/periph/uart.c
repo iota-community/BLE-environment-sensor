@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2014 Freie Universität Berlin, Hinnerk van Bruinehsen
+ *               2017 Thomas Perrot <thomas.perrot@tupi.fr>
  *
  * This file is subject to the terms and conditions of the GNU Lesser
  * General Public License v2.1. See the file LICENSE in the top level
@@ -16,10 +17,11 @@
  *
  * @author      Hauke Petersen <hauke.petersen@fu-berlin.de>
  * @author      Hinnerk van Bruinehsen <h.v.bruinehsen@fu-berlin.de>
+ * @author      Thomas Perrot <thomas.perrot@tupi.fr>
  *
  *
- * Support static BAUD rate calculation using UART_STDIO_BAUDRATE.
- * Set UART_STDIO_BAUDRATE to the desired baud rate and pass it as a -D argument
+ * Support static BAUD rate calculation using STDIO_UART_BAUDRATE.
+ * Set STDIO_UART_BAUDRATE to the desired baud rate and pass it as a -D argument
  * at compliation time (e.g. in the boards Makefile.include file).
  * UART_BAUD_TOL can be set to guarantee a BAUD rate tolerance at compile time or
  * to switch to double speed transmission (U2X) to achieve a lower tolerance.
@@ -48,9 +50,9 @@
 #define BAUD_TOL 2
 #endif
 
-#if defined(UART_STDIO_BAUDRATE)
+#if defined(STDIO_UART_BAUDRATE)
 /* BAUD and F_CPU are required by setbaud.h to calculated BRR */
-#define BAUD UART_STDIO_BAUDRATE
+#define BAUD STDIO_UART_BAUDRATE
 #define F_CPU CLOCK_CORECLOCK
 #include <util/setbaud.h>
 #endif
@@ -78,11 +80,16 @@ static mega_uart_t *dev[] = {
  */
 static uart_isr_ctx_t isr_ctx[UART_NUMOF];
 
+
 static void _update_brr(uart_t uart, uint16_t brr, bool double_speed)
 {
     dev[uart]->BRR = brr;
     if (double_speed) {
+#ifdef CPU_ATMEGA32U4
+        dev[uart]->CSRA |= (1 << U2X1);
+#else
         dev[uart]->CSRA |= (1 << U2X0);
+#endif
     }
 }
 
@@ -90,13 +97,14 @@ static void _set_brr(uart_t uart, uint32_t baudrate)
 {
     uint16_t brr;
 
-#if defined(UART_STDIO_BAUDRATE)
+#if defined(STDIO_UART_BAUDRATE)
     /* UBRR_VALUE and USE_2X are statically computed from <util/setbaud.h> */
-    if (baudrate == UART_STDIO_BAUDRATE) {
+    if (baudrate == STDIO_UART_BAUDRATE) {
         _update_brr(uart, UBRR_VALUE, USE_2X);
         return;
     }
 #endif
+/* brr calculation is different from the datasheet to provide better rounding */
 #if defined(UART_DOUBLE_SPEED)
     brr = (CLOCK_CORECLOCK + 4UL * baudrate) / (8UL * baudrate) - 1UL;
     _update_brr(uart, brr, true);
@@ -118,20 +126,35 @@ int uart_init(uart_t uart, uint32_t baudrate, uart_rx_cb_t rx_cb, void *arg)
     isr_ctx[uart].arg = arg;
 
     /* disable and reset UART */
+#ifdef CPU_ATMEGA32U4
+    dev[uart]->CSRD = 0;
+#endif
     dev[uart]->CSRB = 0;
     dev[uart]->CSRA = 0;
 
     /* configure UART to 8N1 mode */
+#ifdef CPU_ATMEGA32U4
+    dev[uart]->CSRC = (1 << UCSZ10) | (1 << UCSZ11);
+#else
     dev[uart]->CSRC = (1 << UCSZ00) | (1 << UCSZ01);
+#endif
     /* set clock divider */
     _set_brr(uart, baudrate);
 
     /* enable RX and TX and the RX interrupt */
     if (rx_cb) {
+#ifdef CPU_ATMEGA32U4
+        dev[uart]->CSRB = ((1 << RXCIE1) | (1 << RXEN1) | (1 << TXEN1));
+#else
         dev[uart]->CSRB = ((1 << RXCIE0) | (1 << RXEN0) | (1 << TXEN0));
+#endif
     }
     else {
+#ifdef CPU_ATMEGA32U4
+        dev[uart]->CSRB = (1 << TXEN1);
+#else
         dev[uart]->CSRB = (1 << TXEN0);
+#endif
     }
 
     return UART_OK;
@@ -140,7 +163,11 @@ int uart_init(uart_t uart, uint32_t baudrate, uart_rx_cb_t rx_cb, void *arg)
 void uart_write(uart_t uart, const uint8_t *data, size_t len)
 {
     for (size_t i = 0; i < len; i++) {
+#ifdef CPU_ATMEGA32U4
+        while (!(dev[uart]->CSRA & (1 << UDRE1))) {};
+#else
         while (!(dev[uart]->CSRA & (1 << UDRE0))) {}
+#endif
         dev[uart]->DR = data[i];
     }
 }

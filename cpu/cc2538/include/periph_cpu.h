@@ -24,7 +24,11 @@
 #include <stdint.h>
 #include <stdio.h>
 
+#include "vendor/hw_soc_adc.h"
+
 #include "cpu.h"
+#include "vendor/hw_ssi.h"
+#include "vendor/hw_uart.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -60,6 +64,10 @@ typedef uint32_t gpio_t;
  */
 #define GPIO_UNDEF          (0xffffffff)
 
+/**
+ * @brief Custom value to indicate unused parameter in gpio_init_mux
+ */
+#define GPIO_MUX_NONE       (0xff)
 /**
  * @brief   Define a custom GPIO_PIN macro
  *
@@ -160,6 +168,46 @@ typedef struct {
 } uart_conf_t;
 /** @} */
 
+#ifndef DOXYGEN
+/**
+ * @brief   Override parity values
+ * @{
+ */
+#define HAVE_UART_PARITY_T
+typedef enum {
+   UART_PARITY_NONE = 0,                                                /**< no parity */
+   UART_PARITY_EVEN = (UART_LCRH_PEN | UART_LCRH_EPS),                  /**< even parity */
+   UART_PARITY_ODD = UART_LCRH_PEN,                                     /**< odd parity */
+   UART_PARITY_MARK = (UART_LCRH_PEN | UART_LCRH_SPS),                  /**< mark */
+   UART_PARITY_SPACE = (UART_LCRH_PEN | UART_LCRH_EPS | UART_LCRH_SPS)  /**< space */
+} uart_parity_t;
+/** @} */
+
+ /**
+ * @brief   Override data bits length values
+ * @{
+ */
+#define HAVE_UART_DATA_BITS_T
+typedef enum {
+    UART_DATA_BITS_5 = (0 << UART_LCRH_WLEN_S),     /**< 5 data bits */
+    UART_DATA_BITS_6 = (1 << UART_LCRH_WLEN_S),     /**< 6 data bits */
+    UART_DATA_BITS_7 = (2 << UART_LCRH_WLEN_S),     /**< 7 data bits */
+    UART_DATA_BITS_8 = (3 << UART_LCRH_WLEN_S),     /**< 8 data bits */
+} uart_data_bits_t;
+/** @} */
+
+/**
+ * @brief   Override stop bits length values
+ * @{
+ */
+#define HAVE_UART_STOP_BITS_T
+typedef enum {
+   UART_STOP_BITS_1 = 0,                  /**< 1 stop bit */
+   UART_STOP_BITS_2 = UART_LCRH_STP2,     /**< 2 stop bits */
+} uart_stop_bits_t;
+/** @} */
+#endif /* DOXYGEN */
+
 /**
  * @name   Override SPI mode settings
  * @{
@@ -217,7 +265,7 @@ static const spi_clk_conf_t spi_clk_config[] = {
  * @{
  */
 typedef struct {
-    cc2538_ssi_t *dev;      /**< SSI device */
+    uint8_t num;            /**< number of SSI device, i.e. 0 or 1 */
     gpio_t mosi_pin;        /**< pin used for MOSI */
     gpio_t miso_pin;        /**< pin used for MISO */
     gpio_t sck_pin;         /**< pin used for SCK */
@@ -259,36 +307,13 @@ typedef enum {
 typedef gpio_t adc_conf_t;
 
 /**
- * @name SOC_ADC_ADCCON3 register bit masks
+ * @name SOC_ADC_ADCCON3_EREF registers field values
  * @{
  */
-#define SOC_ADC_ADCCON3_EREF    (0x000000C0) /**< Reference voltage for extra */
-#define SOC_ADC_ADCCON3_EDIV    (0x00000030) /**< Decimation rate for extra */
-#define SOC_ADC_ADCCON3_ECH     (0x0000000F) /**< Single channel select */
-/** @} */
-
-/**
- * @name SOC_ADC_ADCCONx registers field values
- * @{
- */
-#define SOC_ADC_ADCCON_REF_INT      (0 << 6)    /**< Internal reference */
-#define SOC_ADC_ADCCON_REF_EXT      (1 << 6)    /**< External reference on AIN7 pin */
-#define SOC_ADC_ADCCON_REF_AVDD5    (2 << 6)    /**< AVDD5 pin */
-#define SOC_ADC_ADCCON_REF_DIFF     (3 << 6)    /**< External reference on AIN6-AIN7 differential input */
-#define SOC_ADC_ADCCON_CH_GND       (0xC)       /**< GND */
-/** @} */
-
-/**
- * @brief Mask to check end-of-conversion (EOC) bit
- */
-#define SOC_ADC_ADCCON1_EOC_MASK    (0x80)
-
-/**
- * @name Masks for ADC raw data
- * @{
- */
-#define SOC_ADC_ADCL_MASK       (0x000000FC)
-#define SOC_ADC_ADCH_MASK       (0x000000FF)
+#define SOC_ADC_ADCCON3_EREF_INT      (0 << SOC_ADC_ADCCON3_EREF_S)    /**< Internal reference */
+#define SOC_ADC_ADCCON3_EREF_EXT      (1 << SOC_ADC_ADCCON3_EREF_S)    /**< External reference on AIN7 pin */
+#define SOC_ADC_ADCCON3_EREF_AVDD5    (2 << SOC_ADC_ADCCON3_EREF_S)    /**< AVDD5 pin */
+#define SOC_ADC_ADCCON3_EREF_DIFF     (3 << SOC_ADC_ADCCON3_EREF_S)    /**< External reference on AIN6-AIN7 differential input */
 /** @} */
 
 /**

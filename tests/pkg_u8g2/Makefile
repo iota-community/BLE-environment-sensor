@@ -1,7 +1,8 @@
 include ../Makefile.tests_common
 
-BOARD_INSUFFICIENT_MEMORY := chronos msb-430 msb-430h nucleo-f031k6 telosb \
-                             wsn430-v1_3b wsn430-v1_4 z1
+BOARD_INSUFFICIENT_MEMORY := arduino-duemilanove arduino-leonardo arduino-nano \
+                             arduino-uno chronos msb-430 msb-430h \
+                             nucleo-f031k6 telosb wsn430-v1_3b wsn430-v1_4 z1
 
 USEMODULE += xtimer
 
@@ -58,7 +59,8 @@ CFLAGS += -DTEST_PIN_RESET=$(TEST_PIN_RESET)
 
 CFLAGS += -DTEST_DISPLAY=$(TEST_DISPLAY)
 
-include $(RIOTBASE)/Makefile.include
+TEST_ON_CI_WHITELIST += all
+# HACK Blacklist native as `murdock` fails on utf-8 characters for native tests
+TEST_ON_CI_BLACKLIST += native
 
-test:
-	tests/01-run.py
+include $(RIOTBASE)/Makefile.include

@@ -156,7 +156,7 @@ static const uart_conf_t uart_config[] = {
 #define UART_0_ISR          (isr_uart0_rx_tx)
 #define UART_1_ISR          (isr_uart1_rx_tx)
 
-#define UART_NUMOF          (sizeof(uart_config) / sizeof(uart_config[0]))
+#define UART_NUMOF          ARRAY_SIZE(uart_config)
 /** @} */
 
 /**
@@ -165,42 +165,44 @@ static const uart_conf_t uart_config[] = {
  */
 static const adc_conf_t adc_config[] = {
     /* internal: temperature sensor */
-    [ 0] = { .dev = ADC1, .pin = GPIO_UNDEF,           .chan = 26 },
+    /* The temperature sensor has a very high output impedance, it must not be
+     * sampled using hardware averaging, or the sampled values will be garbage */
+    [ 0] = { .dev = ADC1, .pin = GPIO_UNDEF,           .chan = 26, .avg = ADC_AVG_NONE },
     /* internal: band gap */
-    [ 1] = { .dev = ADC1, .pin = GPIO_UNDEF,           .chan = 27 },
+    [ 1] = { .dev = ADC1, .pin = GPIO_UNDEF,           .chan = 27, .avg = ADC_AVG_MAX },
     /* internal: V_REFSH */
-    [ 2] = { .dev = ADC1, .pin = GPIO_UNDEF,           .chan = 29 },
+    [ 2] = { .dev = ADC1, .pin = GPIO_UNDEF,           .chan = 29, .avg = ADC_AVG_MAX },
     /* internal: V_REFSL */
-    [ 3] = { .dev = ADC1, .pin = GPIO_UNDEF,           .chan = 30 },
+    [ 3] = { .dev = ADC1, .pin = GPIO_UNDEF,           .chan = 30, .avg = ADC_AVG_MAX },
     /* internal: DAC0 module output level */
-    [ 4] = { .dev = ADC1, .pin = GPIO_UNDEF,           .chan = 23 },
+    [ 4] = { .dev = ADC1, .pin = GPIO_UNDEF,           .chan = 23, .avg = ADC_AVG_MAX },
     /* internal: VREF module output level */
-    [ 5] = { .dev = ADC1, .pin = GPIO_UNDEF,           .chan = 18 },
-     /* on board connection to Mulle Vbat/2 on PGA1_DP pin */
-    [ 6] = { .dev = ADC1, .pin = GPIO_UNDEF,           .chan =  0 },
+    [ 5] = { .dev = ADC1, .pin = GPIO_UNDEF,           .chan = 18, .avg = ADC_AVG_MAX },
+    /* on board connection to Mulle Vbat/2 on PGA1_DP pin */
+    [ 6] = { .dev = ADC1, .pin = GPIO_UNDEF,           .chan =  0, .avg = ADC_AVG_MAX },
     /* on board connection to Mulle Vchr/2 on PGA1_DM pin */
-    [ 7] = { .dev = ADC1, .pin = GPIO_UNDEF,           .chan = 19 },
+    [ 7] = { .dev = ADC1, .pin = GPIO_UNDEF,           .chan = 19, .avg = ADC_AVG_MAX },
     /* expansion port PGA0_DP pin */
-    [ 8] = { .dev = ADC0, .pin = GPIO_UNDEF,           .chan =  0 },
+    [ 8] = { .dev = ADC0, .pin = GPIO_UNDEF,           .chan =  0, .avg = ADC_AVG_MAX },
     /* expansion port PGA0_DM pin */
-    [ 9] = { .dev = ADC0, .pin = GPIO_UNDEF,           .chan = 19 },
+    [ 9] = { .dev = ADC0, .pin = GPIO_UNDEF,           .chan = 19, .avg = ADC_AVG_MAX },
     /* expansion port PTA17 */
-    [10] = { .dev = ADC1, .pin = GPIO_PIN(PORT_A, 17), .chan = 17 },
+    [10] = { .dev = ADC1, .pin = GPIO_PIN(PORT_A, 17), .chan = 17, .avg = ADC_AVG_MAX },
     /* expansion port PTB0  */
-    [11] = { .dev = ADC1, .pin = GPIO_PIN(PORT_B,  0), .chan =  8 },
+    [11] = { .dev = ADC1, .pin = GPIO_PIN(PORT_B,  0), .chan =  8, .avg = ADC_AVG_MAX },
     /* expansion port PTC0  */
-    [12] = { .dev = ADC0, .pin = GPIO_PIN(PORT_C,  0), .chan = 14 },
+    [12] = { .dev = ADC0, .pin = GPIO_PIN(PORT_C,  0), .chan = 14, .avg = ADC_AVG_MAX },
     /* expansion port PTC8  */
-    [13] = { .dev = ADC1, .pin = GPIO_PIN(PORT_C,  8), .chan =  4 },
+    [13] = { .dev = ADC1, .pin = GPIO_PIN(PORT_C,  8), .chan =  4, .avg = ADC_AVG_MAX },
     /* expansion port PTC9  */
-    [14] = { .dev = ADC1, .pin = GPIO_PIN(PORT_C,  9), .chan =  5 },
+    [14] = { .dev = ADC1, .pin = GPIO_PIN(PORT_C,  9), .chan =  5, .avg = ADC_AVG_MAX },
     /* expansion port PTC10 */
-    [15] = { .dev = ADC1, .pin = GPIO_PIN(PORT_C, 10), .chan =  6 },
+    [15] = { .dev = ADC1, .pin = GPIO_PIN(PORT_C, 10), .chan =  6, .avg = ADC_AVG_MAX },
     /* expansion port PTC11 */
-    [16] = { .dev = ADC1, .pin = GPIO_PIN(PORT_C, 11), .chan =  7 }
+    [16] = { .dev = ADC1, .pin = GPIO_PIN(PORT_C, 11), .chan =  7, .avg = ADC_AVG_MAX },
 };
 
-#define ADC_NUMOF           (sizeof(adc_config) / sizeof(adc_config[0]))
+#define ADC_NUMOF           ARRAY_SIZE(adc_config)
 /*
  * K60D ADC reference settings:
  * 0: VREFH/VREFL external pin pair
@@ -222,7 +224,7 @@ static const dac_conf_t dac_config[] = {
     }
 };
 
-#define DAC_NUMOF           (sizeof(dac_config) / sizeof(dac_config[0]))
+#define DAC_NUMOF           ARRAY_SIZE(dac_config)
 /** @} */
 
 /**
@@ -254,7 +256,7 @@ static const pwm_conf_t pwm_config[] = {
     }
 };
 
-#define PWM_NUMOF           (sizeof(pwm_config) / sizeof(pwm_config[0]))
+#define PWM_NUMOF           ARRAY_SIZE(pwm_config)
 /** @} */
 
 /**
@@ -333,7 +335,7 @@ static const spi_conf_t spi_config[] = {
     }
 };
 
-#define SPI_NUMOF           (sizeof(spi_config) / sizeof(spi_config[0]))
+#define SPI_NUMOF           ARRAY_SIZE(spi_config)
 /** @} */
 
 /**
@@ -352,7 +354,7 @@ static const i2c_conf_t i2c_config[] = {
         .sda_pcr = (PORT_PCR_MUX(2) | PORT_PCR_ODE_MASK),
     },
 };
-#define I2C_NUMOF           (sizeof(i2c_config) / sizeof(i2c_config[0]))
+#define I2C_NUMOF           ARRAY_SIZE(i2c_config)
 #define I2C_0_ISR           (isr_i2c0)
 #define I2C_1_ISR           (isr_i2c1)
 /** @} */

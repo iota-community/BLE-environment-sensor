@@ -38,14 +38,23 @@ extern "C" {
  * @name    Timer peripheral configuration
  * @{
  */
-#define TIMER_NUMOF        (1U)
-#define TIMER_0_EN         1
+static const tc32_conf_t timer_config[] = {
+    {   /* Timer 0 - System Clock */
+        .dev            = TC0,
+        .irq            = TC0_IRQn,
+        .mclk           = &MCLK->APBCMASK.reg,
+        .mclk_mask      = MCLK_APBCMASK_TC0 | MCLK_APBCMASK_TC1,
+        .gclk_id        = TC0_GCLK_ID,
+        .gclk_src       = GCLK_PCHCTRL_GEN(0),
+        .prescaler      = TC_CTRLA_PRESCALER(4),
+        .flags          = TC_CTRLA_MODE_COUNT32,
+    }
+};
 
 /* Timer 0 configuration */
-#define TIMER_0_DEV        TC0->COUNT32
-#define TIMER_0_CHANNELS   1
-#define TIMER_0_MAX_VALUE  (0xffffffff)
-#define TIMER_0_ISR        isr_tc0
+#define TIMER_0_CHANNELS    2
+#define TIMER_0_ISR         isr_tc0
+#define TIMER_NUMOF         ARRAY_SIZE(timer_config)
 /** @} */
 
 /**
@@ -79,7 +88,7 @@ static const uart_conf_t uart_config[] = {
 #define UART_0_ISR          isr_sercom3
 #define UART_1_ISR          isr_sercom4
 
-#define UART_NUMOF          (sizeof(uart_config) / sizeof(uart_config[0]))
+#define UART_NUMOF          ARRAY_SIZE(uart_config)
 /** @} */
 
 /**
@@ -101,7 +110,7 @@ static const spi_conf_t spi_config[] = {
     }
 };
 
-#define SPI_NUMOF           (sizeof(spi_config) / sizeof(spi_config[0]))
+#define SPI_NUMOF           ARRAY_SIZE(spi_config)
 /** @} */
 
 /**
@@ -120,7 +129,7 @@ static const i2c_conf_t i2c_config[] = {
     }
 };
 
-#define I2C_NUMOF           (sizeof(i2c_config) / sizeof(i2c_config[0]))
+#define I2C_NUMOF           ARRAY_SIZE(i2c_config)
 /** @} */
 
 /**

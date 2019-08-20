@@ -53,7 +53,7 @@ static const timer_conf_t timer_config[] = {
     },
 };
 
-#define TIMER_NUMOF         (sizeof(timer_config) / sizeof(timer_config[0]))
+#define TIMER_NUMOF         ARRAY_SIZE(timer_config)
 
 #define TIMER_IRQ_PRIO      1
 /** @} */
@@ -76,7 +76,7 @@ static const uart_conf_t uart_config[] = {
 #define UART_0_ISR          isr_uart0
 
 /* macros common across all UARTs */
-#define UART_NUMOF          (sizeof(uart_config) / sizeof(uart_config[0]))
+#define UART_NUMOF          ARRAY_SIZE(uart_config)
 
 /** @} */
 
@@ -94,7 +94,7 @@ static const i2c_conf_t i2c_config[] = {
     },
 };
 
-#define I2C_NUMOF               (sizeof(i2c_config) / sizeof(i2c_config[0]))
+#define I2C_NUMOF               ARRAY_SIZE(i2c_config)
 /** @} */
 
 /**
@@ -103,28 +103,28 @@ static const i2c_conf_t i2c_config[] = {
  */
 static const spi_conf_t spi_config[] = {
     {
-        .dev      = SSI0,
-        .mosi_pin = GPIO_PA4,
-        .miso_pin = GPIO_PA5,
-        .sck_pin  = GPIO_PA2,
-        .cs_pin   = GPIO_PD0
+        .num      = 0,
+        .mosi_pin = GPIO_PIN(0, 4),
+        .miso_pin = GPIO_PIN(0, 5),
+        .sck_pin  = GPIO_PIN(0, 2),
+        .cs_pin   = GPIO_PIN(3, 0)
     }
 };
 
-#define SPI_NUMOF           (sizeof(spi_config) / sizeof(spi_config[0]))
+#define SPI_NUMOF           ARRAY_SIZE(spi_config)
 /** @} */
 
 /**
  * @name ADC configuration
  * @{
  */
-#define SOC_ADC_ADCCON_REF  SOC_ADC_ADCCON_REF_AVDD5
+#define SOC_ADC_ADCCON3_EREF  SOC_ADC_ADCCON3_EREF_AVDD5
 
 static const adc_conf_t adc_config[] = {
     GPIO_PIN(0, 6), /**< GPIO_PA6 = ADC_ALS_PIN */
 };
 
-#define ADC_NUMOF           (sizeof(adc_config) / sizeof(adc_config[0]))
+#define ADC_NUMOF           ARRAY_SIZE(adc_config)
 /** @} */
 
 /**

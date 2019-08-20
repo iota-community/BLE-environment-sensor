@@ -4,8 +4,7 @@ USEMODULE += fmt
 USEMODULE += xtimer
 
 TEST_ON_CI_WHITELIST += all
+# This test randomly fails on `native` so disable it from CI
+TEST_ON_CI_BLACKLIST += native
 
 include $(RIOTBASE)/Makefile.include
-
-test:
-	tests/01-run.py

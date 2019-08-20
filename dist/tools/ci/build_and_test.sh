@@ -80,7 +80,7 @@ then
             exit $RESULT
         fi
 
-        run ./dist/tools/ci/print_toolchain_versions.sh
+        run make print-versions
 
         run ./dist/tools/commit-msg/check.sh ${CI_BASE_BRANCH}
         run ./dist/tools/whitespacecheck/check.sh ${CI_BASE_BRANCH}
@@ -93,6 +93,7 @@ then
         run ./dist/tools/coccinelle/check.sh
         run ./dist/tools/flake8/check.sh
         run ./dist/tools/headerguards/check.sh
+        run ./dist/tools/buildsystem_sanity_check/check.sh
         exit $RESULT
     fi
 

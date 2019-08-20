@@ -65,18 +65,18 @@ static uint32_t runqueue_bitcache = 0;
 #endif
 
 FORCE_USED_SECTION
-uint8_t max_threads = sizeof(sched_threads) / sizeof(thread_t*);
+const uint8_t max_threads = ARRAY_SIZE(sched_threads);
 
 #ifdef DEVELHELP
 /* OpenOCD can't determine struct offsets and additionally this member is only
  * available if compiled with DEVELHELP */
 FORCE_USED_SECTION
-uint8_t _tcb_name_offset = offsetof(thread_t, name);
+const uint8_t _tcb_name_offset = offsetof(thread_t, name);
 #endif
 
 #ifdef MODULE_SCHEDSTATISTICS
 static void (*sched_cb) (uint32_t timestamp, uint32_t value) = NULL;
-schedstat sched_pidlist[KERNEL_PID_LAST + 1];
+schedstat_t sched_pidlist[KERNEL_PID_LAST + 1];
 #endif
 
 int __attribute__((used)) sched_run(void)
@@ -116,7 +116,7 @@ int __attribute__((used)) sched_run(void)
 #endif
 
 #ifdef MODULE_SCHEDSTATISTICS
-        schedstat *active_stat = &sched_pidlist[active_thread->pid];
+        schedstat_t *active_stat = &sched_pidlist[active_thread->pid];
         if (active_stat->laststart) {
             active_stat->runtime_ticks += now - active_stat->laststart;
         }
@@ -124,7 +124,7 @@ int __attribute__((used)) sched_run(void)
     }
 
 #ifdef MODULE_SCHEDSTATISTICS
-    schedstat *next_stat = &sched_pidlist[next_thread->pid];
+    schedstat_t *next_stat = &sched_pidlist[next_thread->pid];
     next_stat->laststart = now;
     next_stat->schedules++;
     if (sched_cb) {
@@ -158,7 +158,7 @@ void sched_register_cb(void (*callback)(uint32_t, uint32_t))
 }
 #endif
 
-void sched_set_status(thread_t *process, unsigned int status)
+void sched_set_status(thread_t *process, thread_status_t status)
 {
     if (status >= STATUS_ON_RUNQUEUE) {
         if (!(process->status >= STATUS_ON_RUNQUEUE)) {
@@ -170,7 +170,7 @@ void sched_set_status(thread_t *process, unsigned int status)
     }
     else {
         if (process->status >= STATUS_ON_RUNQUEUE) {
-            DEBUG("sched_set_status: removing thread %" PRIkernel_pid " to runqueue %" PRIu8 ".\n",
+            DEBUG("sched_set_status: removing thread %" PRIkernel_pid " from runqueue %" PRIu8 ".\n",
                   process->pid, process->priority);
             clist_lpop(&sched_runqueues[process->priority]);
 

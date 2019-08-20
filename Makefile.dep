@@ -5,15 +5,20 @@ OLD_USEPKG := $(sort $(USEPKG))
 # include board dependencies
 -include $(RIOTBOARD)/$(BOARD)/Makefile.dep
 
+# Transitional conditional include until all boards define 'CPU' in
+# Makefile.features
+ifneq (,$(CPU))
+  # include cpu dependencies
+  -include $(RIOTCPU)/$(CPU)/Makefile.dep
+endif
+
+# include external modules dependencies
+# processed before RIOT ones to be evaluated before the 'default' rules.
+-include $(EXTERNAL_MODULE_DIRS:%=%/Makefile.dep)
+
 # pull dependencies from sys and drivers
 include $(RIOTBASE)/sys/Makefile.dep
 include $(RIOTBASE)/drivers/Makefile.dep
-
-ifneq (,$(filter cbor_ctime,$(USEMODULE)))
-  ifneq (,$(filter newlib,$(USEMODULE)))
-    USEMODULE += newlib_gnu_source
-  endif
-endif
 
 ifneq (,$(filter ndn-riot,$(USEPKG)))
   USEMODULE += gnrc
@@ -31,6 +36,7 @@ endif
 ifneq (,$(filter gnrc_mac,$(USEMODULE)))
   USEMODULE += gnrc_priority_pktqueue
   USEMODULE += csma_sender
+  USEMODULE += evtimer
 endif
 
 ifneq (,$(filter gnrc_gomach,$(USEMODULE)))
@@ -69,10 +75,11 @@ ifneq (,$(filter gnrc_uhcpc,$(USEMODULE)))
 endif
 
 ifneq (,$(filter uhcpc,$(USEMODULE)))
-  USEMODULE += posix
+  USEMODULE += posix_inet
 endif
 
 ifneq (,$(filter nordic_softdevice_ble,$(USEPKG)))
+  FEATURES_REQUIRED += ble_nordic_softdevice
   USEMODULE += softdevice_handler
   USEMODULE += ble_common
   USEMODULE += ble_6lowpan
@@ -147,9 +154,17 @@ endif
 
 ifneq (,$(filter gnrc_netif,$(USEMODULE)))
   USEMODULE += netif
+  USEMODULE += l2util
+  USEMODULE += fmt
+  ifneq (,$(filter netdev_ieee802154,$(USEMODULE)))
+    USEMODULE += gnrc_netif_ieee802154
+  endif
+  ifneq (,$(filter netdev_eth,$(USEMODULE)))
+    USEMODULE += gnrc_netif_ethernet
+  endif
 endif
 
-ifneq (,$(filter ieee802154 nrfmin,$(USEMODULE)))
+ifneq (,$(filter ieee802154 nrfmin esp_now cc110x gnrc_sixloenc,$(USEMODULE)))
   ifneq (,$(filter gnrc_ipv6, $(USEMODULE)))
     USEMODULE += gnrc_sixlowpan
   endif
@@ -201,13 +216,13 @@ ifneq (,$(filter gnrc_sixlowpan_frag,$(USEMODULE)))
 endif
 
 ifneq (,$(filter gnrc_sixlowpan_iphc,$(USEMODULE)))
+  USEMODULE += gnrc_ipv6
   USEMODULE += gnrc_sixlowpan
   USEMODULE += gnrc_sixlowpan_ctx
   USEMODULE += gnrc_sixlowpan_iphc_nhc
 endif
 
 ifneq (,$(filter gnrc_sixlowpan,$(USEMODULE)))
-  USEMODULE += gnrc_ipv6
   USEMODULE += sixlowpan
 endif
 
@@ -246,11 +261,11 @@ ifneq (,$(filter gnrc_icmpv6,$(USEMODULE)))
 endif
 
 ifneq (,$(filter gnrc_rpl_srh,$(USEMODULE)))
-  USEMODULE += ipv6_ext_rh
+  USEMODULE += gnrc_ipv6_ext_rh
 endif
 
-ifneq (,$(filter ipv6_ext_rh,$(USEMODULE)))
-  USEMODULE += ipv6_ext
+ifneq (,$(filter gnrc_ipv6_ext_rh,$(USEMODULE)))
+  USEMODULE += gnrc_ipv6_ext
 endif
 
 ifneq (,$(filter gnrc_ipv6_ext,$(USEMODULE)))
@@ -373,8 +388,8 @@ ifneq (,$(filter newlib,$(USEMODULE)))
   ifeq (,$(filter newlib_syscalls_%,$(USEMODULE)))
     USEMODULE += newlib_syscalls_default
   endif
-  ifeq (,$(filter rtt_stdio,$(USEMODULE)))
-    USEMODULE += uart_stdio
+  ifeq (,$(filter stdio_rtt,$(USEMODULE)))
+    USEMODULE += stdio_uart
   endif
 endif
 
@@ -382,16 +397,36 @@ ifneq (,$(filter posix_sockets,$(USEMODULE)))
   USEMODULE += bitfield
   USEMODULE += random
   USEMODULE += vfs
-  USEMODULE += posix
+  USEMODULE += posix_headers
   USEMODULE += xtimer
 endif
 
-ifneq (,$(filter rtt_stdio,$(USEMODULE)))
+ifneq (,$(filter stdio_rtt,$(USEMODULE)))
   USEMODULE += xtimer
 endif
 
-ifneq (,$(filter uart_stdio,$(USEMODULE)))
+ifneq (,$(filter shell,$(USEMODULE)))
+  USEMODULE += stdin
+endif
+
+ifneq (,$(filter stdio_ethos,$(USEMODULE)))
+  USEMODULE += ethos
+  USEMODULE += stdin
+  USEMODULE += stdio_uart
+endif
+
+ifneq (,$(filter stdin,$(USEMODULE)))
+  ifneq (,$(filter stdio_uart,$(USEMODULE)))
+    USEMODULE += stdio_uart_rx
+  endif
+endif
+
+ifneq (,$(filter stdio_uart_rx,$(USEMODULE)))
   USEMODULE += isrpipe
+  USEMODULE += stdio_uart
+endif
+
+ifneq (,$(filter stdio_uart,$(USEMODULE)))
   FEATURES_REQUIRED += periph_uart
 endif
 
@@ -399,23 +434,35 @@ ifneq (,$(filter isrpipe,$(USEMODULE)))
   USEMODULE += tsrb
 endif
 
+ifneq (,$(filter isrpipe_read_timeout,$(USEMODULE)))
+  USEMODULE += isrpipe
+  USEMODULE += xtimer
+endif
+
 ifneq (,$(filter shell_commands,$(USEMODULE)))
   ifneq (,$(filter fib,$(USEMODULE)))
-    USEMODULE += posix
+    USEMODULE += posix_inet
   endif
 endif
 
 ifneq (,$(filter posix_semaphore,$(USEMODULE)))
   USEMODULE += sema
   USEMODULE += xtimer
+  USEMODULE += posix_headers
 endif
 
 ifneq (,$(filter posix_time,$(USEMODULE)))
   USEMODULE += xtimer
+  USEMODULE += posix_headers
+endif
+
+ifneq (,$(filter posix_inet,$(USEMODULE)))
+  USEMODULE += posix_headers
 endif
 
 ifneq (,$(filter lwip_sixlowpan,$(USEMODULE)))
   USEMODULE += lwip_ipv6_autoconfig
+  USEMODULE += l2util
 endif
 
 ifneq (,$(filter lwip_ipv6_autoconfig lwip_ipv6_mld,$(USEMODULE)))
@@ -450,10 +497,6 @@ ifneq (,$(filter lwip_sock_udp,$(USEMODULE)))
 endif
 
 ifneq (,$(filter lwip_%,$(USEMODULE)))
-  USEMODULE += lwip
-endif
-
-ifneq (,$(filter lwip,$(USEMODULE)))
   USEPKG += lwip
   USEMODULE += core_mbox
   USEMODULE += lwip_api
@@ -465,6 +508,9 @@ ifneq (,$(filter lwip,$(USEMODULE)))
   endif
   ifeq (,$(filter lwip_tcp lwip_udp lwip_udplite,$(USEMODULE)))
     USEMODULE += lwip_raw
+  endif
+  ifneq (,$(filter netdev_eth,$(USEMODULE)))
+    USEMODULE += lwip_ethernet
   endif
 endif
 
@@ -494,6 +540,7 @@ endif
 ifneq (,$(filter fib,$(USEMODULE)))
   USEMODULE += universal_address
   USEMODULE += xtimer
+  USEMODULE += posix_headers
 endif
 
 ifneq (,$(filter oonf_rfc5444,$(USEMODULE)))
@@ -538,6 +585,10 @@ ifneq (,$(filter gnrc_pktbuf_%, $(USEMODULE)))
   USEMODULE += gnrc_pktbuf # make MODULE_GNRC_PKTBUF macro available for all implementations
 endif
 
+ifneq (,$(filter gnrc_netif_%,$(USEMODULE)))
+  USEMODULE += gnrc_netif
+endif
+
 ifneq (,$(filter netstats_%, $(USEMODULE)))
   USEMODULE += netstats
 endif
@@ -559,6 +610,8 @@ endif
 
 ifneq (,$(filter arduino,$(USEMODULE)))
   FEATURES_REQUIRED += arduino
+  FEATURES_REQUIRED += periph_adc
+  FEATURES_REQUIRED += periph_gpio
   USEMODULE += xtimer
 endif
 
@@ -591,6 +644,10 @@ endif
 
 ifneq (,$(filter saul,$(USEMODULE)))
   USEMODULE += phydat
+endif
+
+ifneq (,$(filter saul_nrf_temperature,$(USEMODULE)))
+  FEATURES_REQUIRED += periph_temperature
 endif
 
 ifneq (,$(filter phydat,$(USEMODULE)))
@@ -652,12 +709,11 @@ ifneq (,$(filter random,$(USEMODULE)))
     USEMODULE += hashes
   endif
 
-  USEMODULE += luid
-endif
+  ifeq (,$(filter puf_sram,$(USEMODULE)))
+    FEATURES_OPTIONAL += periph_hwrng
+  endif
 
-ifneq (,$(filter openthread_contrib,$(USEMODULE)))
-  USEMODULE += openthread_contrib_netdev
-  FEATURES_REQUIRED += cpp
+  USEMODULE += luid
 endif
 
 ifneq (,$(filter asymcute,$(USEMODULE)))
@@ -683,6 +739,7 @@ ifneq (,$(filter devfs,$(USEMODULE)))
 endif
 
 ifneq (,$(filter vfs,$(USEMODULE)))
+  USEMODULE += posix_headers
   ifeq (native, $(BOARD))
     USEMODULE += native_vfs
   endif
@@ -690,10 +747,11 @@ endif
 
 ifneq (,$(filter sock_dns,$(USEMODULE)))
   USEMODULE += sock_util
+  USEMODULE += posix_headers
 endif
 
 ifneq (,$(filter sock_util,$(USEMODULE)))
-  USEMODULE += posix
+  USEMODULE += posix_inet
   USEMODULE += fmt
   USEMODULE += sock_udp
 endif
@@ -730,6 +788,7 @@ endif
 ifneq (,$(filter gcoap,$(USEMODULE)))
   USEMODULE += nanocoap
   USEMODULE += gnrc_sock_udp
+  USEMODULE += sock_util
 endif
 
 ifneq (,$(filter luid,$(USEMODULE)))
@@ -754,24 +813,36 @@ ifneq (,$(filter skald_%,$(USEMODULE)))
 endif
 
 ifneq (,$(filter skald,$(USEMODULE)))
-  FEATURES_REQUIRED += radio_ble
+  FEATURES_REQUIRED += radio_nrfble
   USEMODULE += xtimer
   USEMODULE += random
 endif
 
-ifneq (,$(filter rdcli_simple_standalone,$(USEMODULE)))
-  USEMODULE += rdcli_simple
+ifneq (,$(filter bluetil_addr,$(USEMODULE)))
+  USEMODULE += fmt
+endif
+
+ifneq (,$(filter cord_epsim,$(USEMODULE)))
+  USEMODULE += cord_common
+  USEMODULE += gcoap
+endif
+
+ifneq (,$(filter cord_ep_standalone,$(USEMODULE)))
+  USEMODULE += cord_ep
   USEMODULE += xtimer
 endif
 
-ifneq (,$(filter rdcli_simple,$(USEMODULE)))
-  USEMODULE += rdcli_common
-  USEMODULE += fmt
+ifneq (,$(filter cord_ep,$(USEMODULE)))
+  USEMODULE += cord_common
+  USEMODULE += core_thread_flags
+  USEMODULE += gcoap
+  ifneq (,$(filter shell_commands,$(USEMODULE)))
+    USEMODULE += sock_util
+  endif
 endif
 
-ifneq (,$(filter rdcli_common,$(USEMODULE)))
+ifneq (,$(filter cord_common,$(USEMODULE)))
   USEMODULE += fmt
-  USEMODULE += gcoap
   USEMODULE += luid
 endif
 
@@ -779,8 +850,54 @@ ifneq (,$(filter tlsf-malloc,$(USEMODULE)))
   USEPKG += tlsf
 endif
 
+ifneq (,$(filter usbus,$(USEMODULE)))
+  FEATURES_REQUIRED += periph_usbdev
+  USEMODULE += core_thread_flags
+  USEMODULE += event
+endif
+
+ifneq (,$(filter usbus_cdc_ecm,$(USEMODULE)))
+  USEMODULE += iolist
+  USEMODULE += fmt
+  USEMODULE += usbus
+  USEMODULE += netdev_eth
+  USEMODULE += luid
+endif
+
 ifneq (,$(filter uuid,$(USEMODULE)))
   USEMODULE += hashes
+  USEMODULE += random
+  USEMODULE += fmt
+endif
+
+ifneq (,$(filter riotboot_flashwrite, $(USEMODULE)))
+  USEMODULE += riotboot_slot
+  FEATURES_REQUIRED += periph_flashpage
+endif
+
+ifneq (,$(filter riotboot_slot, $(USEMODULE)))
+  USEMODULE += riotboot_hdr
+endif
+
+ifneq (,$(filter riotboot_hdr, $(USEMODULE)))
+  USEMODULE += checksum
+  USEMODULE += riotboot
+endif
+
+ifneq (,$(filter irq_handler,$(USEMODULE)))
+  USEMODULE += event
+endif
+
+# Enable periph_gpio when periph_gpio_irq is enabled
+ifneq (,$(filter periph_gpio_irq,$(USEMODULE)))
+  FEATURES_REQUIRED += periph_gpio
+endif
+
+ifneq (,$(filter devfs_hwrng,$(USEMODULE)))
+  FEATURES_REQUIRED += periph_hwrng
+endif
+
+ifneq (,$(filter devfs_random,$(USEMODULE)))
   USEMODULE += random
 endif
 
@@ -793,18 +910,26 @@ FEATURES_OPTIONAL += periph_pm
 # include package dependencies
 -include $(USEPKG:%=$(RIOTPKG)/%/Makefile.dep)
 
-# remove required features from optional features
-FEATURES_OPTIONAL := $(filter-out $(FEATURES_REQUIRED),$(FEATURES_OPTIONAL))
-
-# add all optional but provided features to the list of used features
-FEATURES_USED := $(sort $(FEATURES_REQUIRED) $(filter $(FEATURES_OPTIONAL),$(FEATURES_PROVIDED)))
 
 # all periph features correspond to a periph submodule
+# FEATURES_USED is defined in Makefile.features
 USEMODULE += $(filter periph_%,$(FEATURES_USED))
+
+# select cpu_check_address pseudomodule if the corresponding feature is used
+USEMODULE += $(filter cpu_check_address, $(FEATURES_USED))
+
+# include periph_common if any periph_* driver is used
+ifneq (,$(filter periph_%, $(USEMODULE)))
+  USEMODULE += periph_common
+endif
 
 # recursively catch transitive dependencies
 USEMODULE := $(sort $(USEMODULE))
 USEPKG := $(sort $(USEPKG))
 ifneq ($(OLD_USEMODULE) $(OLD_USEPKG),$(USEMODULE) $(USEPKG))
   include $(RIOTBASE)/Makefile.dep
+endif
+
+ifneq (,$(filter ecc_%,$(USEMODULE)))
+  USEMODULE += ecc
 endif

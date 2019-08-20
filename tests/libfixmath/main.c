@@ -30,7 +30,9 @@
 
 #include <stdio.h>
 
+#include "kernel_defines.h"
 #include "fix16.h"
+#include "test_utils/interactive_sync.h"
 
 #ifndef M_PI
 #   define M_PI 3.14159265359
@@ -64,7 +66,7 @@ static void binary_ops(void)
             }
 
 
-            for (unsigned o = 0; o < sizeof(ops) / sizeof(*ops); ++o) {
+            for (unsigned o = 0; o < ARRAY_SIZE(ops); ++o) {
                 fix16_t c = ops[o].fun(a, b);
 
                 char buf[3][14];
@@ -95,7 +97,7 @@ static void unary_ops(void)
         };
 
         for (fix16_t input = fix16_from_dbl(-10.0); input < fix16_from_dbl(+10.0); input += fix16_from_dbl(0.25)) {
-            for (unsigned o = 0; o < sizeof(ops) / sizeof(*ops); ++o) {
+            for (unsigned o = 0; o < ARRAY_SIZE(ops); ++o) {
                 fix16_t result = ops[o].fun(input);
 
                 char buf[2][14];
@@ -120,7 +122,7 @@ static void unary_ops(void)
         };
 
         for (fix16_t input = fix16_from_dbl(-M_PI/2); input < fix16_from_dbl(+M_PI/2); input += fix16_from_dbl(0.05)) {
-            for (unsigned o = 0; o < sizeof(ops) / sizeof(*ops); ++o) {
+            for (unsigned o = 0; o < ARRAY_SIZE(ops); ++o) {
                 fix16_t result = ops[o].fun(input);
 
                 char buf[2][14];
@@ -143,7 +145,7 @@ static void unary_ops(void)
         };
 
         for (fix16_t input = fix16_from_dbl(-1.0); input < fix16_from_dbl(+1.0); input += fix16_from_dbl(0.05)) {
-            for (unsigned o = 0; o < sizeof(ops) / sizeof(*ops); ++o) {
+            for (unsigned o = 0; o < ARRAY_SIZE(ops); ++o) {
                 fix16_t result = ops[o].fun(input);
 
                 char buf[2][14];
@@ -169,7 +171,7 @@ static void unary_ops(void)
         };
 
         for (fix16_t input = fix16_from_dbl(0.05); input < fix16_from_dbl(+10.0); input += fix16_from_dbl(0.25)) {
-            for (unsigned o = 0; o < sizeof(ops) / sizeof(*ops); ++o) {
+            for (unsigned o = 0; o < ARRAY_SIZE(ops); ++o) {
                 fix16_t result = ops[o].fun(input);
 
                 char buf[2][14];
@@ -184,6 +186,9 @@ static void unary_ops(void)
 
 int main(void)
 {
+    /* Sync to prevent flooding of buffer */
+    test_utils_interactive_sync();
+
     puts("Unary.");
     unary_ops();
 

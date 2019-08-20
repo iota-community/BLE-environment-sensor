@@ -516,6 +516,10 @@ static void _on_unsuback(asymcute_con_t *con, const uint8_t *data, size_t len)
 
 static void _on_data(asymcute_con_t *con, size_t pkt_len, sock_udp_ep_t *remote)
 {
+    if (pkt_len < 2) {
+        return;
+    }
+
     size_t len;
     size_t pos = _len_get(con->rxbuf, &len);
 
@@ -524,8 +528,7 @@ static void _on_data(asymcute_con_t *con, size_t pkt_len, sock_udp_ep_t *remote)
         return;
     }
     /* validate incoming data: verify message length */
-    if ((pkt_len < 2) ||
-        (pkt_len <= pos) || (pkt_len < len)) {
+    if ((pkt_len <= pos) || (pkt_len < len)) {
         /* length field of MQTT-SN packet seems to be invalid -> drop the pkt */
         return;
     }
@@ -709,7 +712,7 @@ int asymcute_connect(asymcute_con_t *con, asymcute_req_t *req,
         return ASYMCUTE_NOTSUP;
     }
     /* make sure the client ID will fit into the dedicated buffer */
-    if (id_len > ASYMCUTE_ID_MAXLEN) {
+    if ((id_len < MQTTSN_CLI_ID_MINLEN) || (id_len > MQTTSN_CLI_ID_MAXLEN)) {
         return ASYMCUTE_OVERFLOW;
     }
     /* check if the context is not already connected to any gateway */

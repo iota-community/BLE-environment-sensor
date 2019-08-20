@@ -70,18 +70,25 @@ static const clock_config_t clock_config = {
  * @{
  */
 #define PIT_NUMOF               (2U)
-#define PIT_CONFIG {                 \
-        {                            \
-            .prescaler_ch = 0,       \
-            .count_ch = 1,           \
-        },                           \
-        {                            \
-            .prescaler_ch = 2,       \
-            .count_ch = 3,           \
-        },                           \
+#define PIT_CONFIG {            \
+        {                       \
+            .prescaler_ch = 0,  \
+            .count_ch = 1,      \
+        },                      \
+        {                       \
+            .prescaler_ch = 2,  \
+            .count_ch = 3,      \
+        },                      \
     }
-#define LPTMR_NUMOF             (0U)
-#define LPTMR_CONFIG {}
+#define LPTMR_NUMOF             (1U)
+#define LPTMR_CONFIG {          \
+    {                           \
+        .dev = LPTMR0,          \
+        .irqn = LPTMR0_IRQn,    \
+        .src = 2,               \
+        .base_freq = 32768u,    \
+    },                          \
+}
 #define TIMER_NUMOF             ((PIT_NUMOF) + (LPTMR_NUMOF))
 
 #define PIT_BASECLOCK           (CLOCK_BUSCLOCK)
@@ -112,7 +119,7 @@ static const uart_conf_t uart_config[] = {
 
 #define UART_0_ISR          (isr_uart0_rx_tx)
 
-#define UART_NUMOF          (sizeof(uart_config) / sizeof(uart_config[0]))
+#define UART_NUMOF          ARRAY_SIZE(uart_config)
 /** @} */
 
 /**
@@ -120,15 +127,35 @@ static const uart_conf_t uart_config[] = {
  * @{
  */
 static const adc_conf_t adc_config[] = {
-    { .dev = ADC0, .pin = GPIO_PIN(PORT_B, 10), .chan = 14 },
-    { .dev = ADC0, .pin = GPIO_PIN(PORT_B, 11), .chan = 15 },
-    { .dev = ADC0, .pin = GPIO_PIN(PORT_C, 11), .chan =  7 },
-    { .dev = ADC0, .pin = GPIO_PIN(PORT_C, 10), .chan =  6 },
-    { .dev = ADC0, .pin = GPIO_PIN(PORT_C,  8), .chan =  4 },
-    { .dev = ADC0, .pin = GPIO_PIN(PORT_C,  9), .chan =  5 }
+    [ 0] = { .dev = ADC0, .pin = GPIO_PIN(PORT_B,  2), .chan = 12, .avg = ADC_AVG_MAX }, /* PTB2 (Arduino A0) */
+    [ 1] = { .dev = ADC0, .pin = GPIO_PIN(PORT_B,  3), .chan = 13, .avg = ADC_AVG_MAX }, /* PTB3 (Arduino A1) */
+    [ 2] = { .dev = ADC1, .pin = GPIO_PIN(PORT_B, 10), .chan = 14, .avg = ADC_AVG_MAX }, /* PTB10 (Arduino A2) */
+    [ 3] = { .dev = ADC1, .pin = GPIO_PIN(PORT_B, 11), .chan = 15, .avg = ADC_AVG_MAX }, /* PTB11 (Arduino A3) */
+    [ 4] = { .dev = ADC1, .pin = GPIO_PIN(PORT_C, 11), .chan =  7, .avg = ADC_AVG_MAX }, /* PTC11 (Arduino A4) */
+    [ 5] = { .dev = ADC1, .pin = GPIO_PIN(PORT_C, 10), .chan =  6, .avg = ADC_AVG_MAX }, /* PTC10 (Arduino A5) */
+    [ 6] = { .dev = ADC0, .pin = GPIO_UNDEF          , .chan =  0, .avg = ADC_AVG_MAX }, /* ADC0_DP0 */
+    [ 7] = { .dev = ADC0, .pin = GPIO_UNDEF          , .chan = 19, .avg = ADC_AVG_MAX }, /* ADC0_DM0 */
+    [ 8] = { .dev = ADC0, .pin = GPIO_UNDEF          , .chan = (0 | ADC_SC1_DIFF_MASK), .avg = ADC_AVG_MAX }, /* ADC0_DP0 - ADC0_DM0 */
+    [ 9] = { .dev = ADC1, .pin = GPIO_UNDEF          , .chan =  0, .avg = ADC_AVG_MAX }, /* ADC1_DP0 */
+    [10] = { .dev = ADC1, .pin = GPIO_UNDEF          , .chan = 19, .avg = ADC_AVG_MAX }, /* ADC1_DM0 */
+    [11] = { .dev = ADC1, .pin = GPIO_UNDEF          , .chan = (0 | ADC_SC1_DIFF_MASK), .avg = ADC_AVG_MAX }, /* ADC1_DP0 - ADC1_DM0 */
+    [12] = { .dev = ADC0, .pin = GPIO_UNDEF          , .chan =  1, .avg = ADC_AVG_MAX }, /* ADC0_DP1 */
+    [13] = { .dev = ADC0, .pin = GPIO_UNDEF          , .chan = 20, .avg = ADC_AVG_MAX }, /* ADC0_DM1 */
+    [14] = { .dev = ADC0, .pin = GPIO_UNDEF          , .chan = (1 | ADC_SC1_DIFF_MASK), .avg = ADC_AVG_MAX }, /* ADC0_DP1 - ADC0_DM1 */
+    [15] = { .dev = ADC1, .pin = GPIO_UNDEF          , .chan =  1, .avg = ADC_AVG_MAX }, /* ADC1_DP1 */
+    [16] = { .dev = ADC1, .pin = GPIO_UNDEF          , .chan = 20, .avg = ADC_AVG_MAX }, /* ADC1_DM1 */
+    [17] = { .dev = ADC1, .pin = GPIO_UNDEF          , .chan = (1 | ADC_SC1_DIFF_MASK), .avg = ADC_AVG_MAX }, /* ADC1_DP1 - ADC1_DM1 */
+    /* internal: temperature sensor */
+    /* The temperature sensor has a very high output impedance, it must not be
+     * sampled using hardware averaging, or the sampled values will be garbage */
+    [18] = { .dev = ADC0, .pin = GPIO_UNDEF, .chan = 26, .avg = ADC_AVG_NONE },
+    /* internal: band gap */
+    /* Note: the band gap buffer uses a bit of current and is turned off by default,
+     * Set PMC->REGSC |= PMC_REGSC_BGBE_MASK before reading or the input will be floating */
+    [19] = { .dev = ADC0, .pin = GPIO_UNDEF, .chan = 27, .avg = ADC_AVG_MAX },
 };
 
-#define ADC_NUMOF           (sizeof(adc_config) / sizeof(adc_config[0]))
+#define ADC_NUMOF           ARRAY_SIZE(adc_config)
 /*
  * K64F ADC reference settings:
  * 0: VREFH/VREFL external pin pair
@@ -156,7 +183,7 @@ static const pwm_conf_t pwm_config[] = {
     }
 };
 
-#define PWM_NUMOF           (sizeof(pwm_config) / sizeof(pwm_config[0]))
+#define PWM_NUMOF           ARRAY_SIZE(pwm_config)
 /** @} */
 
 
@@ -221,7 +248,7 @@ static const spi_conf_t spi_config[] = {
     }
 };
 
-#define SPI_NUMOF           (sizeof(spi_config) / sizeof(spi_config[0]))
+#define SPI_NUMOF           ARRAY_SIZE(spi_config)
 /** @} */
 
 
@@ -241,7 +268,7 @@ static const i2c_conf_t i2c_config[] = {
         .sda_pcr = (PORT_PCR_MUX(5) | PORT_PCR_ODE_MASK),
     },
 };
-#define I2C_NUMOF           (sizeof(i2c_config) / sizeof(i2c_config[0]))
+#define I2C_NUMOF           ARRAY_SIZE(i2c_config)
 #define I2C_0_ISR           (isr_i2c0)
 #define I2C_1_ISR           (isr_i2c1)
 /** @} */

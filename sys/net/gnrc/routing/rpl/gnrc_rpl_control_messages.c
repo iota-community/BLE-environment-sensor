@@ -16,6 +16,8 @@
  * @author Cenk Gündoğan <cenk.guendogan@haw-hamburg.de>
  */
 
+#include <string.h>
+
 #include "net/af.h"
 #include "net/icmpv6.h"
 #include "net/ipv6/hdr.h"
@@ -53,6 +55,110 @@ static char addr_str[IPV6_ADDR_MAX_STR_LEN];
 #define GNRC_RPL_SHIFTED_MOP_MASK           (0x7)
 #define GNRC_RPL_PRF_MASK                   (0x7)
 #define GNRC_RPL_PREFIX_AUTO_ADDRESS_BIT    (1 << 6)
+
+/**
+ * @brief   Checks validity of DIO control messages
+ *
+ * @param[in]   dio         The DIO control message
+ * @param[in]   len         Length of the DIO control message
+ *
+ * @return  true, if @p dio is valid
+ * @return  false, otherwise
+ */
+static inline bool gnrc_rpl_validation_DIO(gnrc_rpl_dio_t *dio, uint16_t len)
+{
+    uint16_t expected_len = sizeof(*dio) + sizeof(icmpv6_hdr_t);
+
+    if (expected_len <= len) {
+        return true;
+    }
+
+    DEBUG("RPL: wrong DIO len: %d, expected: %d\n", len, expected_len);
+
+    return false;
+}
+
+/**
+ * @brief   Checks validity of DIS control messages
+ *
+ * @param[in]   dis     The DIS control message
+ * @param[in]   len     Length of the DIS control message
+ *
+ * @return  true, if @p dis is valid
+ * @return  false, otherwise
+ */
+static inline bool gnrc_rpl_validation_DIS(gnrc_rpl_dis_t *dis, uint16_t len)
+{
+    uint16_t expected_len = sizeof(*dis) + sizeof(icmpv6_hdr_t);
+
+    if (expected_len <= len) {
+        return true;
+    }
+
+    DEBUG("RPL: wrong DIS len: %d, expected: %d\n", len, expected_len);
+
+    return false;
+}
+
+/**
+ * @brief   Checks validity of DAO control messages
+ *
+ * @param[in]   dao         The DAO control message
+ * @param[in]   len         Length of the DAO control message
+ *
+ * @return  true, if @p dao is valid
+ * @return  false, otherwise
+ */
+static inline bool gnrc_rpl_validation_DAO(gnrc_rpl_dao_t *dao, uint16_t len)
+{
+    uint16_t expected_len = sizeof(*dao) + sizeof(icmpv6_hdr_t);
+
+    if ((dao->k_d_flags & GNRC_RPL_DAO_D_BIT)) {
+        expected_len += sizeof(ipv6_addr_t);
+    }
+
+    if (expected_len <= len) {
+        return true;
+    }
+
+    DEBUG("RPL: wrong DAO len: %d, expected: %d\n", len, expected_len);
+
+    return false;
+}
+
+/**
+ * @brief   Checks validity of DAO-ACK control messages
+ *
+ * @param[in]   dao_ack     The DAO-ACK control message
+ * @param[in]   len         Length of the DAO-ACK control message
+ * @param[in]   dst         Pointer to the destination address of the IPv6 packet.
+ *
+ * @return  true, if @p dao_ack is valid
+ * @return  false, otherwise
+ */
+static inline bool gnrc_rpl_validation_DAO_ACK(gnrc_rpl_dao_ack_t *dao_ack,
+                                               uint16_t len,
+                                               ipv6_addr_t *dst)
+{
+    uint16_t expected_len = sizeof(*dao_ack) + sizeof(icmpv6_hdr_t);
+
+    if (ipv6_addr_is_multicast(dst)) {
+        DEBUG("RPL: received DAO-ACK on multicast address\n");
+        return false;
+    }
+
+    if ((dao_ack->d_reserved & GNRC_RPL_DAO_ACK_D_BIT)) {
+        expected_len += sizeof(ipv6_addr_t);
+    }
+
+    if (expected_len == len) {
+        return true;
+    }
+
+    DEBUG("RPL: wrong DAO-ACK len: %d, expected: %d\n", len, expected_len);
+
+    return false;
+}
 
 static gnrc_netif_t *_find_interface_with_rpl_mcast(void)
 {
@@ -314,7 +420,6 @@ void gnrc_rpl_send_DIS(gnrc_rpl_instance_t *inst, ipv6_addr_t *destination,
                        gnrc_rpl_internal_opt_t **options, size_t num_opts)
 {
     gnrc_pktsnip_t *pkt = NULL, *tmp;
-    icmpv6_hdr_t *icmp;
     gnrc_rpl_dis_t *dis;
 
     /* No options provided to be attached to the DIS, so we PadN 2 bytes */
@@ -358,6 +463,9 @@ void gnrc_rpl_send_DIS(gnrc_rpl_instance_t *inst, ipv6_addr_t *destination,
         return;
     }
     pkt = tmp;
+    dis = (gnrc_rpl_dis_t *)pkt->data;
+    dis->flags = 0;
+    dis->reserved = 0;
 
     if ((tmp = gnrc_icmpv6_build(pkt, ICMPV6_RPL_CTRL, GNRC_RPL_ICMPV6_CODE_DIS,
                                  sizeof(icmpv6_hdr_t))) == NULL) {
@@ -366,12 +474,6 @@ void gnrc_rpl_send_DIS(gnrc_rpl_instance_t *inst, ipv6_addr_t *destination,
         return;
     }
     pkt = tmp;
-
-    icmp = (icmpv6_hdr_t *)pkt->data;
-    dis = (gnrc_rpl_dis_t *)(icmp + 1);
-    dis->flags = 0;
-    dis->reserved = 0;
-
 #ifdef MODULE_NETSTATS_RPL
     gnrc_rpl_netstats_tx_DIS(&gnrc_rpl_netstats, gnrc_pkt_len(pkt),
                              (destination && !ipv6_addr_is_multicast(destination)));
@@ -606,8 +708,9 @@ void gnrc_rpl_recv_DIS(gnrc_rpl_dis_t *dis, kernel_pid_t iface, ipv6_addr_t *src
             if (gnrc_rpl_instances[i].state != 0) {
 
                 uint32_t included_opts = 0;
+                size_t opt_len = len - sizeof(gnrc_rpl_dis_t) - sizeof(icmpv6_hdr_t);
                 if(!_parse_options(GNRC_RPL_ICMPV6_CODE_DIS, &gnrc_rpl_instances[i],
-                                   (gnrc_rpl_opt_t *)(dis + 1), len, src, &included_opts)) {
+                                   (gnrc_rpl_opt_t *)(dis + 1), opt_len, src, &included_opts)) {
                     DEBUG("RPL: DIS option parsing error - skip processing the DIS\n");
                     continue;
                 }

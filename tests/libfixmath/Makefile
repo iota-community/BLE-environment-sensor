@@ -2,10 +2,8 @@ include ../Makefile.tests_common
 
 USEPKG += libfixmath
 USEMODULE += libfixmath
+USEMODULE += test_utils_interactive_sync
 
-TEST_ON_CI_WHITELIST += native
+TEST_ON_CI_WHITELIST += all
 
 include $(RIOTBASE)/Makefile.include
-
-test:
-	tests/01-run.py

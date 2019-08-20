@@ -1,12 +1,13 @@
 # tell the build system that the CPU depends on the atmega common files
 USEMODULE += atmega_common
 
-# define path to atmega common module, which is needed for this CPU
-export ATMEGA_COMMON = $(RIOTCPU)/atmega_common/
+RAM_LEN = 8K
+ROM_LEN = 256K
 
-# explicitly tell the linker to link the syscalls and startup code.
-#   Without this the interrupt vectors will not be linked correctly!
-export UNDEF += $(BINDIR)/cpu/startup.o
+# expand atmega_pcint with additional PCINTs for atmega2560
+ifneq (,$(filter atmega_pcint,$(USEMODULE)))
+  USEMODULE += atmega_pcint1 atmega_pcint2
+endif
 
 # CPU depends on the atmega common module, so include it
-include $(ATMEGA_COMMON)Makefile.include
+include $(RIOTCPU)/atmega_common/Makefile.include

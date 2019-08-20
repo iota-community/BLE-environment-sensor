@@ -1,7 +1,8 @@
 include ../Makefile.tests_common
 
-BOARD_BLACKLIST := arduino-mega2560 waspmote-pro arduino-uno arduino-duemilanove \
-                   jiminy-mega256rfr2 mega-xplained
+BOARD_BLACKLIST := arduino-duemilanove arduino-leonardo \
+                   arduino-mega2560 arduino-nano \
+                   arduino-uno jiminy-mega256rfr2 mega-xplained waspmote-pro
 # arduino-mega2560: builds locally but breaks travis (possibly because of
 # differences in the toolchain)
 # The MSP boards don't feature round(), exp(), and log(), which are used in the unittests
@@ -20,6 +21,3 @@ USEMODULE += printf_float
 TEST_ON_CI_WHITELIST += native
 
 include $(RIOTBASE)/Makefile.include
-
-test:
-	tests/01-run.py

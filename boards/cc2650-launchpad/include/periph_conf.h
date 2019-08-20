@@ -62,7 +62,7 @@ static const timer_conf_t timer_config[] = {
  }
 };
 
-#define TIMER_NUMOF         (sizeof(timer_config) / sizeof(timer_config[0]))
+#define TIMER_NUMOF         ARRAY_SIZE(timer_config)
 /** @} */
 
 /**
@@ -78,6 +78,15 @@ static const timer_conf_t timer_config[] = {
 #define UART_NUMOF          (1)
 #define UART_RX_PIN         (2)
 #define UART_TX_PIN         (3)
+/** @} */
+
+/**
+ * @name    I2C configuration
+ * @{
+ */
+#define I2C_NUMOF           (1)
+#define I2C_SDA_PIN         (14)
+#define I2C_SCL_PIN         (15)
 /** @} */
 
 #ifdef __cplusplus

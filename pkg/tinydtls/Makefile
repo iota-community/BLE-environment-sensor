@@ -1,6 +1,6 @@
 PKG_NAME=tinydtls
-PKG_URL=https://git.eclipse.org/r/tinydtls/org.eclipse.tinydtls
-PKG_VERSION=84f1f4e3ca13101a5a9aedeaf08039636c4f34dd
+PKG_URL=https://github.com/eclipse/tinydtls.git
+PKG_VERSION=dcac93f1b38e74f0a57b5df47647943f3df005c2
 PKG_LICENSE=EPL-1.0,EDL-1.0
 
 CFLAGS += -Wno-implicit-fallthrough
@@ -10,7 +10,7 @@ CFLAGS += -D_XOPEN_SOURCE=600
 
 .PHONY: all
 
-all: git-download
+all:
 	@cp $(PKG_BUILDDIR)/Makefile.riot $(PKG_BUILDDIR)/Makefile
 	@cp $(PKG_BUILDDIR)/aes/Makefile.riot $(PKG_BUILDDIR)/aes/Makefile
 	@cp $(PKG_BUILDDIR)/ecc/Makefile.riot $(PKG_BUILDDIR)/ecc/Makefile

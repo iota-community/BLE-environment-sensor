@@ -42,7 +42,7 @@ static const i2c_conf_t i2c_config[] = {
     },
 };
 
-#define I2C_NUMOF               (sizeof(i2c_config) / sizeof(i2c_config[0]))
+#define I2C_NUMOF               ARRAY_SIZE(i2c_config)
 /** @} */
 
 /**
@@ -51,29 +51,29 @@ static const i2c_conf_t i2c_config[] = {
  */
 static const spi_conf_t spi_config[] = {
     {
-        .dev      = SSI0,
-        .mosi_pin = GPIO_PB1,
-        .miso_pin = GPIO_PB3,
-        .sck_pin  = GPIO_PB2,
-        .cs_pin   = GPIO_PB5
+        .num      = 0,
+        .mosi_pin = GPIO_PIN(1, 1),
+        .miso_pin = GPIO_PIN(1, 3),
+        .sck_pin  = GPIO_PIN(1, 2),
+        .cs_pin   = GPIO_PIN(1, 5)
     },
     {
-        .dev      = SSI1,
-        .mosi_pin = GPIO_PC5,
-        .miso_pin = GPIO_PC6,
-        .sck_pin  = GPIO_PC4,
-        .cs_pin   = GPIO_PA7
+        .num      = 1,
+        .mosi_pin = GPIO_PIN(2, 5),
+        .miso_pin = GPIO_PIN(2, 6),
+        .sck_pin  = GPIO_PIN(2, 4),
+        .cs_pin   = GPIO_PIN(0, 7)
     }
 };
 
-#define SPI_NUMOF           (sizeof(spi_config) / sizeof(spi_config[0]))
+#define SPI_NUMOF           ARRAY_SIZE(spi_config)
 /** @} */
 
 /**
  * @name ADC configuration
  * @{
  */
-#define SOC_ADC_ADCCON_REF  SOC_ADC_ADCCON_REF_AVDD5
+#define SOC_ADC_ADCCON3_EREF  SOC_ADC_ADCCON3_EREF_AVDD5
 
 static const adc_conf_t adc_config[] = {
     GPIO_PIN(0, 5), /**< GPIO_PA5 = ADC1_PIN */
@@ -82,7 +82,7 @@ static const adc_conf_t adc_config[] = {
     GPIO_PIN(0, 2), /**< GPIO_PA2 = ADC3_PIN */
 };
 
-#define ADC_NUMOF           (sizeof(adc_config) / sizeof(adc_config[0]))
+#define ADC_NUMOF           ARRAY_SIZE(adc_config)
 /** @} */
 
 

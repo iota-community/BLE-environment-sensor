@@ -8,9 +8,7 @@
  */
 
 /**
- * @defgroup    boards_openmote-b OpenMote-B
- * @ingroup     boards
- * @brief       Support for the OpenMote-B board
+ * @ingroup     boards_openmote-b
  * @{
  *
  * @file
@@ -69,12 +67,12 @@
 #define LED3_OFF                    (LED_PORT->DATA |=  LED3_MASK)
 #define LED3_TOGGLE                 (LED_PORT->DATA ^=  LED3_MASK)
 
-#define RF_SWITCH_2_4_GHZ_ON        (RF_SWITCH_PORT->DATA |=  RF_SWITCH_2_4_GHZ_MASK)
-#define RF_SWITCH_2_4_GHZ_OFF       (RF_SWITCH_PORT->DATA &= ~RF_SWITCH_2_4_GHZ_MASK)
+#define RF_SWITCH_2_4_GHZ_ON        (RF_SWITCH_PORT->DATA &= ~RF_SWITCH_2_4_GHZ_MASK)
+#define RF_SWITCH_2_4_GHZ_OFF       (RF_SWITCH_PORT->DATA |=  RF_SWITCH_2_4_GHZ_MASK)
 #define RF_SWITCH_2_4_GHZ_TOGGLE    (RF_SWITCH_PORT->DATA ^=  RF_SWITCH_2_4_GHZ_MASK)
 
-#define RF_SWITCH_SUB_GHZ_ON        (RF_SWITCH_PORT->DATA |=  RF_SWITCH_SUB_GHZ_MASK)
-#define RF_SWITCH_SUB_GHZ_OFF       (RF_SWITCH_PORT->DATA &= ~RF_SWITCH_SUB_GHZ_MASK)
+#define RF_SWITCH_SUB_GHZ_ON        (RF_SWITCH_PORT->DATA &= ~RF_SWITCH_SUB_GHZ_MASK)
+#define RF_SWITCH_SUB_GHZ_OFF       (RF_SWITCH_PORT->DATA |=  RF_SWITCH_SUB_GHZ_MASK)
 #define RF_SWITCH_SUB_GHZ_TOGGLE    (RF_SWITCH_PORT->DATA ^=  RF_SWITCH_SUB_GHZ_MASK)
 /** @} */
 
@@ -98,6 +96,8 @@
 #define CCA_BACKDOOR_ENABLE       (1)
 #define CCA_BACKDOOR_PORT_A_PIN   (6) /**< BSL_BOOT Pin */
 #define CCA_BACKDOOR_ACTIVE_LEVEL (0) /**< Active low */
+
+#define BOOT_PIN    GPIO_PIN(0, CCA_BACKDOOR_PORT_A_PIN) /**< BSL_BOOT Pin */
 /** @} */
 
 /**

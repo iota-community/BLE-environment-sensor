@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
-import os
 import sys
+from testrunner import run, test_utils_interactive_sync
 
 
 def expect_unary(child):
@@ -31,6 +31,7 @@ def expect_binary(child):
 
 
 def testfunc(child):
+    test_utils_interactive_sync(child)
     child.expect_exact('Unary.')
     expect_unary(child)
     child.expect_exact('Binary.')
@@ -39,6 +40,4 @@ def testfunc(child):
 
 
 if __name__ == "__main__":
-    sys.path.append(os.path.join(os.environ['RIOTTOOLS'], 'testrunner'))
-    from testrunner import run
     sys.exit(run(testfunc))

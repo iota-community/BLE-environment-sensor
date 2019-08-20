@@ -89,21 +89,44 @@ extern "C" {
  * @name Timer peripheral configuration
  * @{
  */
-#define TIMER_NUMOF         (2U)
-#define TIMER_0_EN          1
-#define TIMER_1_EN          1
+static const tc32_conf_t timer_config[] = {
+    {   /* Timer 0 - System Clock */
+        .dev            = TC3,
+        .irq            = TC3_IRQn,
+        .pm_mask        = PM_APBCMASK_TC3,
+        .gclk_ctrl      = GCLK_CLKCTRL_ID_TCC2_TC3,
+#if CLOCK_USE_PLL || CLOCK_USE_XOSC32_DFLL
+        .gclk_src       = GCLK_CLKCTRL_GEN(1),
+        .prescaler      = TC_CTRLA_PRESCALER_DIV1,
+#else
+        .gclk_src       = GCLK_CLKCTRL_GEN(0),
+        .prescaler      = TC_CTRLA_PRESCALER_DIV8,
+#endif
+        .flags          = TC_CTRLA_MODE_COUNT16,
+    },
+    {   /* Timer 1 */
+        .dev            = TC4,
+        .irq            = TC4_IRQn,
+        .pm_mask        = PM_APBCMASK_TC4 | PM_APBCMASK_TC5,
+        .gclk_ctrl      = GCLK_CLKCTRL_ID_TC4_TC5,
+#if CLOCK_USE_PLL || CLOCK_USE_XOSC32_DFLL
+        .gclk_src       = GCLK_CLKCTRL_GEN(1),
+        .prescaler      = TC_CTRLA_PRESCALER_DIV1,
+#else
+        .gclk_src       = GCLK_CLKCTRL_GEN(0),
+        .prescaler      = TC_CTRLA_PRESCALER_DIV8,
+#endif
+        .flags          = TC_CTRLA_MODE_COUNT32,
+    }
+};
 
-/* Timer 0 configuration */
-#define TIMER_0_DEV         TC3->COUNT16
-#define TIMER_0_CHANNELS    2
-#define TIMER_0_MAX_VALUE   (0xffff)
+#define TIMER_0_MAX_VALUE   0xffff
+
+/* interrupt function name mapping */
 #define TIMER_0_ISR         isr_tc3
-
-/* Timer 1 configuration */
-#define TIMER_1_DEV         TC4->COUNT32
-#define TIMER_1_CHANNELS    2
-#define TIMER_1_MAX_VALUE   (0xffffffff)
 #define TIMER_1_ISR         isr_tc4
+
+#define TIMER_NUMOF         ARRAY_SIZE(timer_config)
 /** @} */
 
 /**
@@ -148,7 +171,7 @@ static const uart_conf_t uart_config[] = {
 #define UART_1_ISR          isr_sercom4
 #define UART_2_ISR          isr_sercom5
 
-#define UART_NUMOF          (sizeof(uart_config) / sizeof(uart_config[0]))
+#define UART_NUMOF          ARRAY_SIZE(uart_config)
 /** @} */
 
 /**
@@ -233,7 +256,7 @@ static const spi_conf_t spi_config[] = {
     }
 };
 
-#define SPI_NUMOF           (sizeof(spi_config) / sizeof(spi_config[0]))
+#define SPI_NUMOF           ARRAY_SIZE(spi_config)
 /** @} */
 
 /**
@@ -251,7 +274,7 @@ static const i2c_conf_t i2c_config[] = {
         .flags    = I2C_FLAG_NONE
      }
 };
-#define I2C_NUMOF          (sizeof(i2c_config) / sizeof(i2c_config[0]))
+#define I2C_NUMOF          ARRAY_SIZE(i2c_config)
 /** @} */
 
 /**

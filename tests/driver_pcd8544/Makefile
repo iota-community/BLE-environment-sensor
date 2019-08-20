@@ -1,6 +1,7 @@
 include ../Makefile.tests_common
 
-FEATURES_REQUIRED = periph_gpio periph_spi
+BOARD_INSUFFICIENT_MEMORY := arduino-duemilanove arduino-leonardo arduino-nano\
+                             arduino-uno
 
 USEMODULE += shell
 USEMODULE += pcd8544

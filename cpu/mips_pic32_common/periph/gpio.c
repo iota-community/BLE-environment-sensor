@@ -116,7 +116,7 @@ static PIC32_GPIO_T base_address[] = {
 
 static inline int check_valid_port(uint8_t port)
 {
-    return port < (sizeof(base_address)/sizeof(base_address[0]))
+    return port < ARRAY_SIZE(base_address)
         && base_address[port].gpio != NULL;
 }
 
@@ -170,20 +170,6 @@ int gpio_init(gpio_t pin, gpio_mode_t mode)
         TRISxSET(port) = pin_no;
 
     return 0;
-}
-
-int gpio_init_int(gpio_t pin, gpio_mode_t mode, gpio_flank_t flank,
-                  gpio_cb_t cb, void *arg)
-{
-    (void)pin;
-    (void)mode;
-    (void)flank;
-    (void)cb;
-    (void)arg;
-
-    /* TODO: Not implemented yet */
-
-    return -1;
 }
 
 int gpio_read(gpio_t pin)

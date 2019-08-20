@@ -32,6 +32,7 @@
 #include "shell.h"
 #include "shell_commands.h"
 
+#define ETX '\x03'  /** ASCII "End-of-Text", or ctrl-C */
 #if !defined(SHELL_NO_ECHO) || !defined(SHELL_NO_PROMPT)
 #ifdef MODULE_NEWLIB
 /* use local copy of putchar, as it seems to be inlined,
@@ -44,6 +45,13 @@ static void _putchar(int c) {
 #endif
 #endif
 
+static void flush_if_needed(void)
+{
+#ifdef MODULE_NEWLIB
+    fflush(stdout);
+#endif
+}
+
 static shell_command_handler_t find_handler(const shell_command_t *command_list, char *command)
 {
     const shell_command_t *command_lists[] = {
@@ -53,10 +61,11 @@ static shell_command_handler_t find_handler(const shell_command_t *command_list,
 #endif
     };
 
-    const shell_command_t *entry;
-
     /* iterating over command_lists */
-    for (unsigned int i = 0; i < sizeof(command_lists) / sizeof(entry); i++) {
+    for (unsigned int i = 0; i < ARRAY_SIZE(command_lists); i++) {
+
+        const shell_command_t *entry;
+
         if ((entry = command_lists[i])) {
             /* iterating over commands in command_lists entry */
             while (entry->name != NULL) {
@@ -85,10 +94,11 @@ static void print_help(const shell_command_t *command_list)
 #endif
     };
 
-    const shell_command_t *entry;
-
     /* iterating over command_lists */
-    for (unsigned int i = 0; i < sizeof(command_lists) / sizeof(entry); i++) {
+    for (unsigned int i = 0; i < ARRAY_SIZE(command_lists); i++) {
+
+        const shell_command_t *entry;
+
         if ((entry = command_lists[i])) {
             /* iterating over commands in command_lists entry */
             while (entry->name != NULL) {
@@ -228,13 +238,14 @@ static int readline(char *buf, size_t size)
 
         int c = getchar();
         if (c < 0) {
-            return 1;
+            return EOF;
         }
 
         /* We allow Unix linebreaks (\n), DOS linebreaks (\r\n), and Mac linebreaks (\r). */
         /* QEMU transmits only a single '\r' == 13 on hitting enter ("-serial stdio"). */
         /* DOS newlines are handled like hitting enter twice, but empty lines are ignored. */
-        if (c == '\r' || c == '\n') {
+        /* Ctrl-C cancels the current line. */
+        if (c == '\r' || c == '\n' || c == ETX) {
             *line_buf_ptr = '\0';
 #ifndef SHELL_NO_ECHO
             _putchar('\r');
@@ -242,7 +253,7 @@ static int readline(char *buf, size_t size)
 #endif
 
             /* return 1 if line is empty, 0 otherwise */
-            return line_buf_ptr == buf;
+            return c == ETX || line_buf_ptr == buf;
         }
         /* QEMU uses 0x7f (DEL) as backspace, while 0x08 (BS) is for most terminals */
         else if (c == 0x08 || c == 0x7f) {
@@ -265,6 +276,7 @@ static int readline(char *buf, size_t size)
             _putchar(c);
 #endif
         }
+        flush_if_needed();
     }
 }
 
@@ -275,9 +287,7 @@ static inline void print_prompt(void)
     _putchar(' ');
 #endif
 
-#ifdef MODULE_NEWLIB
-    fflush(stdout);
-#endif
+    flush_if_needed();
 }
 
 void shell_run(const shell_command_t *shell_commands, char *line_buf, int len)
@@ -286,6 +296,10 @@ void shell_run(const shell_command_t *shell_commands, char *line_buf, int len)
 
     while (1) {
         int res = readline(line_buf, len);
+
+        if (res == EOF) {
+            break;
+        }
 
         if (!res) {
             handle_input_line(shell_commands, line_buf);

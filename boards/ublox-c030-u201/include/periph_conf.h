@@ -20,6 +20,7 @@
 #define PERIPH_CONF_H
 
 #include "periph_cpu.h"
+#include "cfg_timer_tim5.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -54,25 +55,6 @@ extern "C" {
 #define CLOCK_PLL_N          (168)
 #define CLOCK_PLL_P          (2)
 #define CLOCK_PLL_Q          (7)
-/** @} */
-
-/**
- * @name Timer configuration
- * @{
- */
-static const timer_conf_t timer_config[] = {
-    {
-        .dev      = TIM5,
-        .max      = 0xffffffff,
-        .rcc_mask = RCC_APB1ENR_TIM5EN,
-        .bus      = APB1,
-        .irqn     = TIM5_IRQn
-    }
-};
-
-#define TIMER_0_ISR         isr_tim5
-
-#define TIMER_NUMOF         (sizeof(timer_config) / sizeof(timer_config[0]))
 /** @} */
 
 /**
@@ -151,7 +133,7 @@ static const uart_conf_t uart_config[] = {
 #define UART_2_ISR          (isr_usart6)
 #define UART_3_ISR          (isr_usart3)
 
-#define UART_NUMOF          (sizeof(uart_config) / sizeof(uart_config[0]))
+#define UART_NUMOF          ARRAY_SIZE(uart_config)
 /** @} */
 
 /**
@@ -191,7 +173,7 @@ static const spi_conf_t spi_config[] = {
     },
 };
 
-#define SPI_NUMOF           (sizeof(spi_config) / sizeof(spi_config[0]))
+#define SPI_NUMOF           ARRAY_SIZE(spi_config)
 /** @} */
 
 /**
@@ -228,7 +210,7 @@ static const i2c_conf_t i2c_config[] = {
 #define I2C_0_ISR           isr_i2c1_ev
 #define I2C_1_ISR           isr_i2c3_ev
 
-#define I2C_NUMOF (sizeof(i2c_config) / sizeof(i2c_config[0]))
+#define I2C_NUMOF ARRAY_SIZE(i2c_config)
 /** @} */
 
 /**
@@ -250,13 +232,6 @@ static const i2c_conf_t i2c_config[] = {
     {GPIO_PIN(PORT_B, 7), 0, 7}, \
     {GPIO_PIN(PORT_B, 6), 0, 6}, \
 }
-/** @} */
-
-/**
- * @name    RTC configuration
- * @{
- */
-#define RTC_NUMOF           (1U)
 /** @} */
 
 #ifdef __cplusplus
