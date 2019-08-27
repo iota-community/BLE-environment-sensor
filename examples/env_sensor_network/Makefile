@@ -51,9 +51,9 @@ USEMODULE += pthread
 USEPKG += nanopb
 USEMODULE += bme280
 CFLAGS += -DBMX280_PARAM_I2C_DEV=I2C_DEV\(0\)
-CFLAGS += -DBMX280_PARAM_I2C_ADDR=0x76
-USEMODULE += tsl2561
-USEMODULE += veml6070
+CFLAGS += -DBMX280_PARAM_I2C_ADDR=0x77
+#USEMODULE += tsl2561
+#USEMODULE += veml6070
 USEMODULE += saul_default
 
 # Comment this out to disable code in RIOT that does safety checking
